@@ -4,21 +4,49 @@ import { useHarmonyStore } from './store/useHarmonyStore'
 import { Toolbar } from './components/Toolbar/Toolbar'
 import { DropCanvas } from './components/Canvas/DropCanvas'
 import { DerivedLines } from './components/SavedLines/DerivedLines'
+import { TrackToggle } from './components/TrackToggle'
 import { exportToPDF } from './utils/pdfExport'
+import { play, stop } from './utils/audioEngine'
 
 export default function App() {
   const {
     projectInfo,
     melody,
     derivedLines,
+    enabledTracks,
+    isPlaying,
+    bpm,
     toolbarOpen,
     toggleToolbar,
+    toggleTrack,
+    setBpm,
+    setIsPlaying,
     addNote,
     generateHarmony,
     clearAll,
   } = useHarmonyStore()
 
   const [activeItem, setActiveItem] = useState(null)
+
+  function handlePlay() {
+    const tracks = []
+    if (enabledTracks.melody !== false && melody.length > 0) {
+      tracks.push({ id: 'melody', notes: melody })
+    }
+    derivedLines.forEach((l) => {
+      if (enabledTracks[l.id] !== false) tracks.push({ id: l.id, notes: l.notes })
+    })
+    if (tracks.length === 0) return
+    setIsPlaying(true)
+    play(tracks, bpm, () => setIsPlaying(false))
+  }
+
+  function handleStop() {
+    stop()
+    setIsPlaying(false)
+  }
+
+  const hasContent = melody.length > 0 || derivedLines.length > 0
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -54,6 +82,30 @@ export default function App() {
             <Chip label={projectInfo.keySignature} sublabel="key" />
             <Chip label={projectInfo.clef} sublabel="clef" />
             <Chip label={projectInfo.timeSignature} sublabel="time" />
+
+            <div style={layout.divider} />
+
+            {/* Playback controls */}
+            {isPlaying ? (
+              <HeaderBtn onClick={handleStop} accent title="Stop playback">
+                ■ Stop
+              </HeaderBtn>
+            ) : (
+              <HeaderBtn onClick={handlePlay} disabled={!hasContent} accent title="Play enabled tracks">
+                ▶ Play
+              </HeaderBtn>
+            )}
+            <div style={layout.bpmWrap} title="Tempo (BPM)">
+              <input
+                type="number"
+                min={40}
+                max={240}
+                value={bpm}
+                onChange={(e) => setBpm(Number(e.target.value) || 90)}
+                style={layout.bpmInput}
+              />
+              <span style={layout.bpmLabel}>BPM</span>
+            </div>
 
             <div style={layout.divider} />
 
@@ -100,7 +152,13 @@ export default function App() {
         <div style={layout.body}>
           <main style={layout.main}>
             <div style={layout.canvasWrapper}>
-              <p style={layout.sectionLabel}>Melody · {projectInfo.keySignature} major</p>
+              <div style={layout.lineHeader}>
+                <TrackToggle
+                  enabled={enabledTracks.melody !== false}
+                  onToggle={() => toggleTrack('melody')}
+                />
+                <p style={layout.sectionLabel}>Melody · {projectInfo.keySignature} major</p>
+              </div>
               <div id="melody_line">
                 <DropCanvas />
               </div>
@@ -239,12 +297,37 @@ const layout = {
     flexDirection: 'column',
     gap: 8,
   },
+  lineHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
   sectionLabel: {
     fontSize: 10,
     fontWeight: 600,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
     color: 'var(--text-muted)',
+  },
+  bpmWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+  },
+  bpmInput: {
+    width: 46,
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)',
+    color: 'var(--text-primary)',
+    padding: '4px 6px',
+    fontSize: 12,
+    outline: 'none',
+  },
+  bpmLabel: {
+    fontSize: 9,
+    color: 'var(--text-muted)',
+    letterSpacing: '0.05em',
   },
 }
 

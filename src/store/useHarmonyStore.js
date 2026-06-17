@@ -32,6 +32,12 @@ export const useHarmonyStore = create((set) => ({
   // Duration used when adding a note by clicking on the staff
   selectedDuration: 'q',
 
+  // ── Audio / playback state ────────────────────────────────────────
+  // Which tracks are unmuted for playback. 'melody' + each derived line id.
+  enabledTracks: { melody: true },
+  isPlaying: false,
+  bpm: 90,
+
   // ── Project actions ───────────────────────────────────────────────
   setProjectInfo: (patch) =>
     set((s) => ({ projectInfo: { ...s.projectInfo, ...patch } })),
@@ -39,6 +45,14 @@ export const useHarmonyStore = create((set) => ({
   toggleToolbar: () => set((s) => ({ toolbarOpen: !s.toolbarOpen })),
   setActiveCategory: (cat) => set({ activeCategory: cat }),
   setSelectedDuration: (duration) => set({ selectedDuration: duration }),
+
+  // ── Audio actions ─────────────────────────────────────────────────
+  toggleTrack: (id) =>
+    set((s) => ({
+      enabledTracks: { ...s.enabledTracks, [id]: !(s.enabledTracks[id] ?? true) },
+    })),
+  setBpm: (bpm) => set({ bpm }),
+  setIsPlaying: (isPlaying) => set({ isPlaying }),
 
   // ── Melody editing ────────────────────────────────────────────────
   addNote: (noteData) =>
@@ -98,16 +112,26 @@ export const useHarmonyStore = create((set) => ({
         }
       })
 
+      // Replace any existing line of this type, reusing its id (and toggle state)
+      const existing = s.derivedLines.find((l) => l.type === type)
+      const id = existing?.id ?? newId('line')
       const others = s.derivedLines.filter((l) => l.type !== type)
-      const next = [...others, { id: newId('line'), type, notes }]
+      const next = [...others, { id, type, notes }]
       next.sort((a, b) => HARMONY_ORDER[a.type] - HARMONY_ORDER[b.type])
-      return { derivedLines: next }
+
+      return {
+        derivedLines: next,
+        enabledTracks: { ...s.enabledTracks, [id]: s.enabledTracks[id] ?? true },
+      }
     }),
 
   removeDerivedLine: (id) =>
-    set((s) => ({ derivedLines: s.derivedLines.filter((l) => l.id !== id) })),
+    set((s) => {
+      const { [id]: _removed, ...enabledTracks } = s.enabledTracks
+      return { derivedLines: s.derivedLines.filter((l) => l.id !== id), enabledTracks }
+    }),
 
-  clearAll: () => set({ melody: [], derivedLines: [] }),
+  clearAll: () => set({ melody: [], derivedLines: [], enabledTracks: { melody: true } }),
 }))
 
 // Dev-only: expose store for debugging in the browser console

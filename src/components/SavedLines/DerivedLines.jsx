@@ -1,5 +1,6 @@
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { ScoreCanvas } from '../Canvas/ScoreCanvas'
+import { TrackToggle } from '../TrackToggle'
 
 const LABELS = {
   '3rd_harmony': '3rd Harmony',
@@ -7,7 +8,8 @@ const LABELS = {
 }
 
 export function DerivedLines() {
-  const { derivedLines, projectInfo, removeDerivedLine } = useHarmonyStore()
+  const { derivedLines, projectInfo, enabledTracks, toggleTrack, removeDerivedLine } =
+    useHarmonyStore()
 
   if (derivedLines.length === 0) return null
 
@@ -16,6 +18,10 @@ export function DerivedLines() {
       {derivedLines.map((line) => (
         <div key={line.id} style={styles.card}>
           <div style={styles.cardHeader}>
+            <TrackToggle
+              enabled={enabledTracks[line.id] !== false}
+              onToggle={() => toggleTrack(line.id)}
+            />
             <span style={styles.label}>{LABELS[line.type] ?? line.type}</span>
             <span style={styles.keySig}>{projectInfo.keySignature} major · auto-generated</span>
             <button
