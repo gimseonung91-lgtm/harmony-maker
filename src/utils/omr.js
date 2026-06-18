@@ -1,54 +1,56 @@
-// Optical Music Recognition (OMR) — sheet-music image → note data
+// Optical Music Recognition (OMR) — sheet-music image → note data.
 //
-// The note-extraction step is designed to be powered by Claude's Vision API.
-// That call is left as a clearly-marked integration point because it requires a
-// paid Anthropic API key. Until a key is wired in, `analyzeScoreImage` returns a
-// representative sample line so the full upload → parse → render pipeline works
-// end-to-end.
+// When an oemer backend is configured (VITE_OMR_BACKEND_URL), the image is sent
+// there, oemer returns MusicXML, and we parse it with the shared MusicXML
+// parser. Without a backend, a representative sample line is returned so the UI
+// flow still works.
 
-/**
- * Read a File as a base64 data URL (used both for preview and for the API call).
- */
-export function fileToDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+import { parseMusicXML } from './musicxml'
+
+const BACKEND_URL = import.meta.env.VITE_OMR_BACKEND_URL || ''
+
+export function hasOmrBackend() {
+  return Boolean(BACKEND_URL)
 }
 
-// Sample fallback: a one-bar C-major line used until the Vision API is connected.
-const SAMPLE_LINE = [
-  { type: 'note', pitch: 'C4', duration: 'q' },
-  { type: 'note', pitch: 'E4', duration: '8' },
-  { type: 'note', pitch: 'G4', duration: '8' },
-  { type: 'rest', pitch: null, duration: 'q' },
-  { type: 'note', pitch: 'A4', duration: 'q' },
+// Sample fallback used when no backend is configured (one line).
+const SAMPLE_LINES = [
+  {
+    lineId: 'line_1',
+    notes: [
+      { type: 'note', pitch: 'C4', duration: 'q', measure: 0 },
+      { type: 'note', pitch: 'E4', duration: '8', measure: 0 },
+      { type: 'note', pitch: 'G4', duration: '8', measure: 0 },
+      { type: 'rest', pitch: null, duration: 'q', measure: 0 },
+      { type: 'note', pitch: 'A4', duration: 'q', measure: 0 },
+    ],
+  },
 ]
 
 /**
- * Analyze a sheet-music image and return a single line of note data.
+ * Analyze a sheet-music image and return its lines (staff systems).
  *
  * @param {File} file – the uploaded image
- * @returns {Promise<Array<{type:'note'|'rest', pitch:string|null, duration:string}>>}
+ * @returns {Promise<{ lines: Array<{lineId:string, notes:Array}>, usedBackend: boolean }>}
  */
 export async function analyzeScoreImage(file) {
-  const dataURL = await fileToDataURL(file)
+  if (BACKEND_URL) {
+    const form = new FormData()
+    form.append('file', file)
 
-  // ─── Claude Vision integration point ──────────────────────────────
-  // To enable real OMR, POST the image to the Anthropic Messages API with a
-  // model such as claude-sonnet-4-6, asking it to return strict JSON shaped like
-  // SAMPLE_LINE. Requires a paid API key (do NOT ship the key in the browser —
-  // proxy through a small backend endpoint).
-  //
-  //   const res = await fetch('/api/omr', { method: 'POST', body: JSON.stringify({ image: dataURL }) })
-  //   const { notes } = await res.json()
-  //   return notes
-  //
-  // Until that endpoint exists we resolve with a sample line so the UI flow is
-  // fully exercisable.
-  void dataURL
-  await new Promise((r) => setTimeout(r, 600)) // simulate analysis latency
-  return SAMPLE_LINE
+    const res = await fetch(`${BACKEND_URL.replace(/\/$/, '')}/omr`, {
+      method: 'POST',
+      body: form,
+    })
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '')
+      throw new Error(`OMR backend error (${res.status}). ${detail.slice(0, 200)}`)
+    }
+    const xml = await res.text()
+    return { lines: parseMusicXML(xml), usedBackend: true }
+  }
+
+  // No backend configured → sample line so the pipeline is still exercisable.
+  await new Promise((r) => setTimeout(r, 400))
+  return { lines: SAMPLE_LINES, usedBackend: false }
 }

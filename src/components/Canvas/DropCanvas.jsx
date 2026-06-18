@@ -1,26 +1,35 @@
 import { useState, useRef } from 'react'
-import { useDroppable } from '@dnd-kit/core'
+import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { useVexFlow } from '../../hooks/useVexFlow'
 import { yToPitch } from '../../utils/pitchUtils'
 
 const SNAP_COLS = 28
-const STAFF_TOP_OFFSET = 44
+export const STAFF_TOP_OFFSET = 44
 
 /**
  * The main editable melody canvas.
- * Notes can be added by dragging from the toolbar OR by clicking on the staff.
- * Each placed note shows a chip with a ✕ to delete it individually.
+ * - Drag toolbar tiles or click the staff to add notes (inserted by X position).
+ * - Drag a placed note's handle to reorder it / change its pitch.
+ * - Click a handle to select a note (number keys 1–5 then change its length).
+ * - Type lyrics in the row beneath each note.
  */
 export function DropCanvas() {
-  const { melody, projectInfo, selectedDuration, addNote, removeNote, toggleTie } =
-    useHarmonyStore()
-  const { containerRef: vexRef } = useVexFlow(melody, projectInfo)
+  const {
+    melody, projectInfo, selectedDuration, selectedNoteId,
+    notePositions, setNotePositions, addNote, removeNote, toggleTie,
+    selectNote, setLyric,
+  } = useHarmonyStore()
+
+  const { containerRef: vexRef } = useVexFlow(melody, projectInfo, setNotePositions)
 
   const [snapGuide, setSnapGuide] = useState(null)
   const containerRef = useRef(null)
 
   const { setNodeRef, isOver } = useDroppable({ id: 'score-drop-zone' })
+
+  const posMap = {}
+  notePositions.forEach((p) => { posMap[p.id] = p.x })
 
   function pitchFromEvent(e) {
     const rect = containerRef.current?.getBoundingClientRect()
@@ -37,17 +46,12 @@ export function DropCanvas() {
     if (g) setSnapGuide(g)
   }
 
-  function handleDragOver(e) {
-    e.preventDefault()
-    const g = pitchFromEvent(e)
-    if (g) setSnapGuide(g)
-  }
-
-  // Click anywhere on the staff to add a note at that pitch
+  // Click empty staff area to add a note at that pitch (inserted by X position)
   function handleClick(e) {
     const g = pitchFromEvent(e)
     if (!g) return
-    addNote({ type: 'note', pitch: g.pitch, duration: selectedDuration })
+    const index = notePositions.filter((p) => p.x < g.x).length
+    addNote({ type: 'note', pitch: g.pitch, duration: selectedDuration }, index)
   }
 
   return (
@@ -56,13 +60,10 @@ export function DropCanvas() {
       onClick={handleClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setSnapGuide(null)}
-      onDragOver={handleDragOver}
-      onDragLeave={() => setSnapGuide(null)}
-      onDrop={(e) => { e.preventDefault(); setSnapGuide(null) }}
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: 160,
+        minHeight: 170,
         cursor: 'crosshair',
         background: isOver ? 'rgba(124,106,247,0.04)' : 'var(--canvas-bg)',
         borderRadius: 'var(--radius-md)',
@@ -94,8 +95,41 @@ export function DropCanvas() {
           justifyContent: 'center', pointerEvents: 'none', color: 'var(--text-muted)',
           fontSize: 12, letterSpacing: '0.04em',
         }}>
-          Click on the staff or drag from the toolbar to add notes
+          Click the staff or drag from the toolbar — then drag notes to reorder
         </div>
+      )}
+
+      {/* Draggable handles over each notehead (reorder / reposition / select) */}
+      {melody.map((n) =>
+        posMap[n.id] != null ? (
+          <NoteHandle
+            key={`h_${n.id}`}
+            note={n}
+            x={posMap[n.id]}
+            selected={selectedNoteId === n.id}
+            onSelect={selectNote}
+          />
+        ) : null
+      )}
+
+      {/* Lyrics row aligned under each sounding note */}
+      {melody.map((n) =>
+        n.type !== 'rest' && posMap[n.id] != null ? (
+          <input
+            key={`ly_${n.id}`}
+            value={n.lyric ?? ''}
+            onChange={(e) => setLyric(n.id, e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="…"
+            style={{
+              position: 'absolute', left: posMap[n.id] - 22, top: 128, width: 46,
+              textAlign: 'center', fontSize: 11, padding: '1px 2px',
+              background: 'transparent', border: 'none',
+              borderBottom: '1px solid var(--border)', color: 'var(--text-primary)',
+              outline: 'none', pointerEvents: 'auto',
+            }}
+          />
+        ) : null
       )}
 
       {/* Placed-note chips: explicit ✕ delete + tie toggle */}
@@ -108,7 +142,7 @@ export function DropCanvas() {
           }}
         >
           {melody.map((n) => (
-            <div key={n.id} style={chipWrap(n.type === 'rest')}>
+            <div key={n.id} style={chipWrap(n.type === 'rest', selectedNoteId === n.id)}>
               <span style={{ fontSize: 9, fontWeight: 600 }}>
                 {n.type === 'rest' ? `${n.duration} rest` : n.pitch}
               </span>
@@ -136,7 +170,30 @@ export function DropCanvas() {
   )
 }
 
-function chipWrap(isRest) {
+function NoteHandle({ note, x, selected, onSelect }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `note_${note.id}`,
+    data: { kind: 'reposition', noteId: note.id },
+  })
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={(e) => { e.stopPropagation(); onSelect(note.id) }}
+      title="Drag to move · click to select"
+      style={{
+        position: 'absolute', left: x - 9, top: 24, width: 18, height: 92,
+        cursor: 'grab', borderRadius: 4, pointerEvents: 'auto',
+        background: selected ? 'rgba(124,106,247,0.18)' : 'transparent',
+        border: selected ? '1px solid var(--accent)' : '1px solid transparent',
+        opacity: isDragging ? 0.3 : 1,
+      }}
+    />
+  )
+}
+
+function chipWrap(isRest, selected) {
   return {
     display: 'flex',
     alignItems: 'center',
@@ -144,7 +201,7 @@ function chipWrap(isRest) {
     padding: '2px 4px',
     borderRadius: 4,
     background: isRest ? 'rgba(160,160,160,0.12)' : 'var(--accent-dim)',
-    border: `1px solid ${isRest ? 'var(--text-muted)' : 'var(--accent)'}`,
+    border: `1px solid ${selected ? 'var(--text-primary)' : isRest ? 'var(--text-muted)' : 'var(--accent)'}`,
     color: isRest ? 'var(--text-secondary)' : 'var(--accent)',
     lineHeight: 1.4,
   }
@@ -164,12 +221,5 @@ const miniBtn = {
   lineHeight: 1,
 }
 
-const tieActive = {
-  background: 'var(--accent)',
-  color: '#fff',
-}
-
-const deleteBtn = {
-  background: 'rgba(242,92,84,0.15)',
-  color: 'var(--danger)',
-}
+const tieActive = { background: 'var(--accent)', color: '#fff' }
+const deleteBtn = { background: 'rgba(242,92,84,0.15)', color: 'var(--danger)' }

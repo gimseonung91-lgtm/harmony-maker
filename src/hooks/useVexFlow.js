@@ -5,11 +5,12 @@ import { pitchToVex } from '../utils/pitchUtils'
  * Renders a single monophonic line (melody or harmony) onto a VexFlow canvas.
  * Supports notes, rests, automatic beaming of eighth/sixteenth notes, and ties.
  *
- * @param {object[]} notes        – array of note objects { type, pitch, duration, tie }
+ * @param {object[]} notes        – array of note objects { type, pitch, duration, tie, lyric }
  * @param {object}   projectInfo  – { clef, keySignature, timeSignature }
+ * @param {function} [onLayout]   – called with [{ id, x }] after layout (note X centers)
  * @returns {{ containerRef }}
  */
-export function useVexFlow(notes, projectInfo) {
+export function useVexFlow(notes, projectInfo, onLayout) {
   const containerRef = useRef(null)
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export function useVexFlow(notes, projectInfo) {
       if (cancelled) return
       el.innerHTML = ''
 
-      const { Renderer, Stave, StaveNote, GhostNote, Voice, Formatter, Accidental, Beam, StaveTie } = VF
+      const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, Beam, StaveTie, Annotation } = VF
 
       const renderer = new Renderer(el, Renderer.Backends.SVG)
       const width = el.clientWidth || 900
@@ -61,6 +62,14 @@ export function useVexFlow(notes, projectInfo) {
         })
         if (key.includes('#')) sn.addModifier(new Accidental('#'), 0)
         if (key.includes('b') && !key.startsWith('b')) sn.addModifier(new Accidental('b'), 0)
+
+        // Lyric rendered beneath the note
+        if (n.lyric) {
+          const annotation = new Annotation(n.lyric)
+            .setVerticalJustification(Annotation.VerticalJustify.BOTTOM)
+            .setFont('Arial', 11)
+          sn.addModifier(annotation, 0)
+        }
         return sn
       })
 
@@ -90,6 +99,15 @@ export function useVexFlow(notes, projectInfo) {
       voice.draw(ctx, stave)
       beams.forEach((b) => b.setContext(ctx).draw())
       ties.forEach((t) => t.setContext(ctx).draw())
+
+      // Report note X centers (canvas-relative) for drag-reordering & lyrics UI
+      if (onLayout) {
+        const positions = vexNotes.map((vn, i) => ({
+          id: notes[i].id,
+          x: vn.getAbsoluteX(),
+        }))
+        onLayout(positions)
+      }
     }).catch(() => {
       el.innerHTML = '<p style="color:#606060;padding:16px;font-size:12px;">VexFlow loading…</p>'
     })

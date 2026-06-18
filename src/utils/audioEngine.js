@@ -59,6 +59,13 @@ export function notesToEvents(notes) {
   return { events, totalBeats: beat }
 }
 
+// All synths route through a master gain so we can tap it for recording.
+let masterGain = null
+function getMaster() {
+  if (!masterGain) masterGain = new Tone.Gain(1).toDestination()
+  return masterGain
+}
+
 // One synth per track id, lazily created and reused.
 const synths = new Map()
 const parts = []
@@ -69,7 +76,7 @@ function getSynth(trackId) {
     const synth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.6 },
-    }).toDestination()
+    }).connect(getMaster())
     synth.volume.value = -8
     synths.set(trackId, synth)
   }
@@ -135,4 +142,68 @@ export function stop() {
   Tone.Transport.cancel(0)
   Tone.Transport.position = 0
   disposeParts()
+}
+
+/**
+ * Render the enabled tracks to an audio Blob by tapping the master output with
+ * a Tone.Recorder during a real-time playback pass. Returns a WebM blob.
+ *
+ * @param {Array<{id:string, notes:object[]}>} tracks
+ * @param {number} bpm
+ * @returns {Promise<Blob>} audio/webm blob
+ */
+export async function renderMix(tracks, bpm) {
+  await Tone.start()
+  const recorder = new Tone.Recorder()
+  getMaster().connect(recorder)
+  recorder.start()
+
+  // Reuse the exact multi-track playback path; resolve on natural end.
+  await new Promise((resolve) => play(tracks, bpm, resolve))
+
+  const blob = await recorder.stop()
+  getMaster().disconnect(recorder)
+  recorder.dispose()
+  return blob
+}
+
+/**
+ * Render the enabled tracks and return a 16-bit PCM WAV Blob. Records via
+ * renderMix, then decodes that audio and re-encodes it as WAV.
+ */
+export async function renderWav(tracks, bpm) {
+  const webm = await renderMix(tracks, bpm)
+  const arrayBuf = await webm.arrayBuffer()
+  const audioBuf = await Tone.getContext().rawContext.decodeAudioData(arrayBuf)
+  return audioBufferToWav(audioBuf)
+}
+
+/** Encode an AudioBuffer as a 16-bit PCM WAV Blob. */
+function audioBufferToWav(buffer) {
+  const numCh = buffer.numberOfChannels
+  const sampleRate = buffer.sampleRate
+  const numFrames = buffer.length
+  const blockAlign = numCh * 2
+  const dataSize = numFrames * blockAlign
+  const view = new DataView(new ArrayBuffer(44 + dataSize))
+
+  let off = 0
+  const str = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off++, s.charCodeAt(i)) }
+  const u32 = (v) => { view.setUint32(off, v, true); off += 4 }
+  const u16 = (v) => { view.setUint16(off, v, true); off += 2 }
+
+  str('RIFF'); u32(36 + dataSize); str('WAVE')
+  str('fmt '); u32(16); u16(1); u16(numCh); u32(sampleRate); u32(sampleRate * blockAlign); u16(blockAlign); u16(16)
+  str('data'); u32(dataSize)
+
+  const channels = []
+  for (let c = 0; c < numCh; c++) channels.push(buffer.getChannelData(c))
+  for (let i = 0; i < numFrames; i++) {
+    for (let c = 0; c < numCh; c++) {
+      const s = Math.max(-1, Math.min(1, channels[c][i]))
+      view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+      off += 2
+    }
+  }
+  return new Blob([view], { type: 'audio/wav' })
 }

@@ -3,6 +3,7 @@ import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { DraggableNote } from './DraggableNote'
 import { DURATIONS, RESTS, PITCHES_IN_OCTAVE } from '../../utils/pitchUtils'
 import { analyzeScoreImage } from '../../utils/omr'
+import { parseMusicXML } from '../../utils/musicxml'
 
 const CATEGORIES = [
   { id: 'notes', label: 'Notes' },
@@ -119,58 +120,116 @@ function NotesPanel() {
 }
 
 function ImportPanel() {
-  const setMelody = useHarmonyStore((s) => s.setMelody)
-  const inputRef = useRef(null)
-  const [status, setStatus] = useState('idle') // idle | loading | done | error
-  const [fileName, setFileName] = useState('')
+  const setImportedLines = useHarmonyStore((s) => s.setImportedLines)
+  const xmlInputRef = useRef(null)
+  const imgInputRef = useRef(null)
+  const [status, setStatus] = useState('idle') // idle | loading | error
+  const [message, setMessage] = useState('')
 
-  async function handleFile(e) {
+  async function handleMusicXML(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setFileName(file.name)
     setStatus('loading')
     try {
-      const notes = await analyzeScoreImage(file)
-      setMelody(notes)
-      setStatus('done')
-    } catch {
+      if (/\.mxl$/i.test(file.name)) {
+        throw new Error(
+          'Compressed .mxl is not supported. Re-export as uncompressed MusicXML (.musicxml).'
+        )
+      }
+      const text = await file.text()
+      const lines = parseMusicXML(text)
+      setImportedLines(lines)
+      const total = lines.reduce((a, l) => a + l.notes.length, 0)
+      setStatus('idle')
+      setMessage(`✓ Imported ${lines.length} lines (${total} notes) from “${file.name}”`)
+    } catch (err) {
       setStatus('error')
+      setMessage(err.message || 'Could not parse the MusicXML file.')
     } finally {
-      e.target.value = '' // allow re-uploading the same file
+      e.target.value = ''
+    }
+  }
+
+  async function handleImage(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setStatus('loading')
+    setMessage(
+      '⏳ Analyzing image… CPU recognition takes about 2–4 minutes. ' +
+      'Please keep this tab open — it is working, not frozen.'
+    )
+    try {
+      const { lines, usedBackend } = await analyzeScoreImage(file)
+      setImportedLines(lines)
+      const total = lines.reduce((a, l) => a + l.notes.length, 0)
+      setStatus('idle')
+      setMessage(
+        usedBackend
+          ? `✓ Recognized ${lines.length} lines (${total} notes) from “${file.name}”`
+          : `Loaded a sample line (image OMR backend not configured).`
+      )
+    } catch (err) {
+      setStatus('error')
+      setMessage(err.message || 'Could not analyze the image.')
+    } finally {
+      e.target.value = ''
     }
   }
 
   return (
     <div>
-      <SectionLabel>Sheet-music image (OMR)</SectionLabel>
+      <SectionLabel>Import MusicXML</SectionLabel>
       <p style={styles.hint}>
-        Upload a photo of sheet music. The notes are detected and loaded into the
-        melody line automatically.
+        Upload a <strong>.musicxml</strong> file from oemer, MuseScore, music21 or
+        any notation tool. It is split into separate lines (one per system).
       </p>
 
       <input
-        ref={inputRef}
+        ref={xmlInputRef}
         type="file"
-        accept="image/*"
-        onChange={handleFile}
+        accept=".musicxml,.xml,application/vnd.recordare.musicxml+xml,text/xml"
+        onChange={handleMusicXML}
         style={{ display: 'none' }}
       />
       <button
-        onClick={() => inputRef.current?.click()}
+        onClick={() => xmlInputRef.current?.click()}
         disabled={status === 'loading'}
         style={styles.uploadBtn}
       >
-        {status === 'loading' ? 'Analyzing…' : '↑  Upload score image'}
+        {status === 'loading' ? 'Parsing…' : '↑  Upload MusicXML'}
       </button>
 
-      {status === 'done' && (
-        <p style={{ ...styles.statusLine, color: 'var(--success)' }}>
-          ✓ Loaded notes from “{fileName}”
-        </p>
-      )}
-      {status === 'error' && (
-        <p style={{ ...styles.statusLine, color: 'var(--danger)' }}>
-          Could not analyze the image. Try another file.
+      <SectionLabel>Sheet-music image (OMR)</SectionLabel>
+      <p style={styles.hint}>
+        Direct image recognition needs a local oemer backend. Without it, this
+        loads a sample line. Tip: run oemer on your image, then upload the
+        resulting .musicxml above.
+      </p>
+      <input
+        ref={imgInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImage}
+        style={{ display: 'none' }}
+      />
+      <button
+        onClick={() => imgInputRef.current?.click()}
+        disabled={status === 'loading'}
+        style={{ ...styles.uploadBtn, borderStyle: 'dotted', opacity: 0.85 }}
+      >
+        ↑  Upload score image
+      </button>
+
+      {message && (
+        <p style={{
+          ...styles.statusLine,
+          color: status === 'error'
+            ? 'var(--danger)'
+            : status === 'loading'
+              ? 'var(--text-secondary)'
+              : 'var(--success)',
+        }}>
+          {message}
         </p>
       )}
     </div>

@@ -1,18 +1,21 @@
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useHarmonyStore } from './store/useHarmonyStore'
 import { Toolbar } from './components/Toolbar/Toolbar'
-import { DropCanvas } from './components/Canvas/DropCanvas'
+import { DropCanvas, STAFF_TOP_OFFSET } from './components/Canvas/DropCanvas'
+import { yToPitch } from './utils/pitchUtils'
 import { DerivedLines } from './components/SavedLines/DerivedLines'
+import { ImportedLines } from './components/ImportedLines/ImportedLines'
 import { TrackToggle } from './components/TrackToggle'
 import { exportToPDF } from './utils/pdfExport'
-import { play, stop } from './utils/audioEngine'
+import { play, stop, renderMix, renderWav } from './utils/audioEngine'
 
 export default function App() {
   const {
     projectInfo,
     melody,
     derivedLines,
+    importedLines,
     enabledTracks,
     isPlaying,
     bpm,
@@ -21,21 +24,72 @@ export default function App() {
     toggleTrack,
     setBpm,
     setIsPlaying,
-    addNote,
+    addNoteAt,
+    moveNote,
+    notePositions,
+    setSelectedDuration,
+    setNoteDuration,
     generateHarmony,
     clearAll,
   } = useHarmonyStore()
 
   const [activeItem, setActiveItem] = useState(null)
+  const [isRendering, setIsRendering] = useState(false)
 
-  function handlePlay() {
+  // Build the enabled-tracks list shared by playback and audio export.
+  function enabledTrackList() {
     const tracks = []
     if (enabledTracks.melody !== false && melody.length > 0) {
       tracks.push({ id: 'melody', notes: melody })
     }
+    importedLines.forEach((l) => {
+      if (enabledTracks[l.id] !== false) tracks.push({ id: l.id, notes: l.notes })
+    })
     derivedLines.forEach((l) => {
       if (enabledTracks[l.id] !== false) tracks.push({ id: l.id, notes: l.notes })
     })
+    return tracks
+  }
+
+  async function handleDownload(format) {
+    const tracks = enabledTrackList()
+    if (tracks.length === 0 || isRendering) return
+    setIsRendering(true)
+    try {
+      const blob = format === 'wav'
+        ? await renderWav(tracks, bpm)
+        : await renderMix(tracks, bpm)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${projectInfo.title || 'harmony-maker'}.${format}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } finally {
+      setIsRendering(false)
+    }
+  }
+
+  // Number keys 1–5 set note length (selected note, else next-draw duration)
+  useEffect(() => {
+    const KEY_DURATION = { 1: 'w', 2: 'h', 3: 'q', 4: '8', 5: '16' }
+    function onKeyDown(e) {
+      const dur = KEY_DURATION[e.key]
+      if (!dur) return
+      const tag = e.target.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      const id = useHarmonyStore.getState().selectedNoteId
+      if (id) setNoteDuration(id, dur)
+      else setSelectedDuration(dur)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [setNoteDuration, setSelectedDuration])
+
+  function handlePlay() {
+    const tracks = enabledTrackList()
     if (tracks.length === 0) return
     setIsPlaying(true)
     play(tracks, bpm, () => setIsPlaying(false))
@@ -46,7 +100,8 @@ export default function App() {
     setIsPlaying(false)
   }
 
-  const hasContent = melody.length > 0 || derivedLines.length > 0
+  const hasContent =
+    melody.length > 0 || derivedLines.length > 0 || importedLines.length > 0
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -56,16 +111,36 @@ export default function App() {
     setActiveItem(active.data.current)
   }
 
-  function handleDragEnd({ active, over }) {
+  function handleDragEnd({ active, over, delta, activatorEvent }) {
     setActiveItem(null)
-    if (over?.id === 'score-drop-zone') {
-      const { type, pitch, duration } = active.data.current
-      addNote({ type, pitch, duration })
+    if (over?.id !== 'score-drop-zone') return
+
+    // Drop pointer position → canvas-relative coordinates
+    const rect = over.rect
+    const dropX = (activatorEvent?.clientX ?? 0) + delta.x - rect.left
+    const dropY = (activatorEvent?.clientY ?? 0) + delta.y - rect.top - STAFF_TOP_OFFSET
+    const pitch = yToPitch(Math.max(0, dropY))
+    const data = active.data.current
+
+    if (data?.kind === 'reposition') {
+      // Reorder an existing note: insertion index among the OTHER notes by X
+      const index = notePositions.filter(
+        (p) => p.id !== data.noteId && p.x < dropX
+      ).length
+      moveNote(data.noteId, index, pitch)
+    } else {
+      // New note from the toolbar: insert at the X position (no longer append)
+      const index = notePositions.filter((p) => p.x < dropX).length
+      addNoteAt({ type: data.type, pitch: data.pitch, duration: data.duration }, index)
     }
   }
 
   async function handleExport() {
-    const ids = ['melody_line', ...derivedLines.map((l) => `derived_line_${l.id}`)]
+    const ids = [
+      'melody_line',
+      ...importedLines.map((l) => `imported_line_${l.id}`),
+      ...derivedLines.map((l) => `derived_line_${l.id}`),
+    ]
     await exportToPDF(ids, projectInfo.title)
   }
 
@@ -106,6 +181,30 @@ export default function App() {
               />
               <span style={layout.bpmLabel}>BPM</span>
             </div>
+
+            {/* Audio export */}
+            {isRendering ? (
+              <HeaderBtn disabled title="Rendering audio…">
+                ⏳ Rendering…
+              </HeaderBtn>
+            ) : (
+              <>
+                <HeaderBtn
+                  onClick={() => handleDownload('wav')}
+                  disabled={!hasContent}
+                  title="Download enabled tracks as WAV"
+                >
+                  ⤓ WAV
+                </HeaderBtn>
+                <HeaderBtn
+                  onClick={() => handleDownload('webm')}
+                  disabled={!hasContent}
+                  title="Download enabled tracks as WebM"
+                >
+                  ⤓ WebM
+                </HeaderBtn>
+              </>
+            )}
 
             <div style={layout.divider} />
 
@@ -163,6 +262,7 @@ export default function App() {
                 <DropCanvas />
               </div>
             </div>
+            <ImportedLines />
             <DerivedLines />
           </main>
 

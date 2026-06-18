@@ -5,7 +5,11 @@
       "mcp__Claude_Preview__preview_start",
       "PowerShell(Stop-Process -Id 23196 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
-      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); \\(Get-Command npm.cmd\\).Source)"
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); \\(Get-Command npm.cmd\\).Source)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); cd \"C:\\\\Users\\\\User\\\\Desktop\\\\악보 생성 프로그램\\\\backend\"; py -3.11 -m py_compile app.py preprocess.py; if \\($?\\) { Write-Output \"syntax OK\" }; Get-NetTCPConnection -LocalPort 7860 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }; Start-Sleep -Seconds 1; Write-Output \"old backend stopped\")",
+      "Bash(grep -l \"ZeroDivisionError\" *.output)",
+      "Bash(grep -l \"4330\" *.output)",
+      "Bash(powershell.exe -NoProfile -Command \"\\(Get-NetTCPConnection -LocalPort 7860 -State Listen -ErrorAction SilentlyContinue\\).OwningProcess\")"
     ]
   }
 }
