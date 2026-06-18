@@ -17,6 +17,14 @@ WORKDIR /home/user/app
 COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
+# Warm-up: download oemer's model checkpoints into the image (baked layer) so
+# cold starts don't re-download. Uses a tiny blank image — oemer loads/downloads
+# the models, then fails fast at staff detection (tolerated), leaving the models
+# cached. Avoids the slow full-inference warm-up that can stall the build.
+RUN python -c "from PIL import Image; Image.new('RGB',(200,200),'white').save('/tmp/w.png')" \
+    && (oemer /tmp/w.png -o /tmp || true) \
+    ; rm -f /tmp/w.png /tmp/w.musicxml 2>/dev/null; true
+
 COPY --chown=user app.py preprocess.py .
 
 EXPOSE 7860

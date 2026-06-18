@@ -68,7 +68,7 @@ async def omr(file: UploadFile = File(...)):
             capture_output=True,
             encoding="utf-8",
             errors="replace",
-            timeout=300,
+            timeout=600,
         )
 
         xml_files = (
