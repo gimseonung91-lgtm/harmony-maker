@@ -1,7 +1,9 @@
+# Note: oemer pulls onnxruntime-gpu, which falls back to CPU when no GPU is
+# present (as on HF free Spaces). Do NOT also list plain onnxruntime — having
+# both installed conflicts.
 fastapi
 uvicorn[standard]
 python-multipart
 oemer
-onnxruntime
 opencv-python-headless
 numpy
