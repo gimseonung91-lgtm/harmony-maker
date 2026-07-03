@@ -155,8 +155,8 @@ function ImportPanel() {
     if (!file) return
     setStatus('loading')
     setMessage(
-      '⏳ Analyzing image… CPU recognition takes about 2–4 minutes. ' +
-      'Please keep this tab open — it is working, not frozen.'
+      '⏳ Analyzing image… this usually takes under 2 minutes. ' +
+      'Please keep this tab open.'
     )
     try {
       const { lines, usedBackend } = await analyzeScoreImage(file)
@@ -201,9 +201,9 @@ function ImportPanel() {
 
       <SectionLabel>Sheet-music image (OMR)</SectionLabel>
       <p style={styles.hint}>
-        Direct image recognition needs a local oemer backend. Without it, this
-        loads a sample line. Tip: run oemer on your image, then upload the
-        resulting .musicxml above.
+        Upload a photo or scan of a <strong>printed</strong> score. Clear,
+        flat, straight-on full pages work best; handwritten scores and small
+        crops usually fail.
       </p>
       <input
         ref={imgInputRef}

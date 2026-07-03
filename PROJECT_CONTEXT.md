@@ -223,14 +223,17 @@ npm run dev
 
 ## 6. 다음 진행할 작업 (TODO)
 
-### 🟡 진행 중 — 이미지 OMR 속도 (2026-07-03 결정)
-- **증상:** HF **무료 CPU**에서 한 페이지 OMR이 **요청당 600초(10분) 초과** → 504 타임아웃.
-  - 실측: 샘플 악보 로컬 ~220초 vs HF 무료 CPU >600초(모델 캐시 후 순수 추론도 >600초). 무료 CPU 속도가 근본 한계.
-- **결정 (2026-07-03):** 이미지 OMR을 핵심 기능으로 유지하기로 하고, 아래 2단계로 개선 진행.
-  - **1단계 (진행 중, 사용자 액션 필요):** HF Space 하드웨어를 유료 **CPU Upgrade**(~$0.03/시간)로 업그레이드 — 엔진(oemer)은 그대로, HF Space **Settings → Hardware**에서 변경. 코드 변경 없이 속도만 수십 초로 개선 예상. 비용 관리를 위해 Space **Sleep time**을 짧게 설정 권장(자세한 안내는 `backend/README.md` "Hardware tier" 섹션 참고). 안 되면 T4 small GPU(~$0.40/시간)로 상향.
-  - **2단계 (보류, 1단계 결과 보고 재검토):** 업그레이드 후에도 인식 **정확도**가 부족하면 엔진을 `oemer` → **Audiveris**(오픈소스, 인쇄 악보 정확도가 더 낫다는 평가)로 교체 검토. `backend/app.py`/`Dockerfile`을 Audiveris(Java 기반 CLI) 호출 구조로 재작성 필요.
-  - (기각) Klangio 등 상용 이미지 OMR API 연동은 이미지당 단가가 공개되어 있지 않아 예산 리스크로 보류.
-- ⚠️ 빌드 관련 교훈: Dockerfile에 **빌드 시 oemer 실행(warm-up) 넣으면 HF 빌더 리소스 초과로 BUILD_ERROR**. 현재는 warm-up 없이 빌드 성공, 모델은 첫 요청 때 다운로드(콜드스타트마다 재다운로드됨).
+### 🟢 해결됨 — 이미지 OMR 엔진 교체: oemer → Audiveris (2026-07-03)
+- **경과:** HF 무료 CPU에서 oemer가 페이지당 600초 초과(504 타임아웃) + 인식 정확도도 불만족 →
+  하드웨어 업그레이드(1단계) 대신 **엔진 자체를 Audiveris 5.10.2로 교체**(사용자 결정).
+- **새 구조:**
+  - `backend/app.py` — 엔진 자동 감지: `AUDIVERIS_BIN` 환경변수 또는 PATH에 Audiveris가 있으면 Audiveris, 없으면 oemer 폴백(로컬 dev용). `GET /`가 `engine` 필드로 활성 엔진 보고. `.mxl`(압축 MusicXML) 출력도 unzip 폴백으로 처리.
+  - `backend/Dockerfile` — ubuntu:24.04 + 공식 Audiveris `.deb`(자바 런타임 내장) + tesseract-ocr(-eng). oemer/onnxruntime 미설치(이미지 대폭 경량화, 모델 다운로드 없어 콜드스타트 빠름). 파이썬 deps는 `requirements-server.txt`.
+  - `backend/requirements.txt` — 로컬(oemer 폴백)용으로 유지.
+  - `preprocess.py` — `max_width` 파라미터화: oemer는 1500px 캡, Audiveris는 다운스케일 없음(고해상도 선호).
+- **비용:** Audiveris는 CPU 친화적(GPU 불필요) → 무료 CPU Basic으로도 페이지당 수십 초 예상. 필요 시 CPU Upgrade($0.03/시간)만 고려.
+- (기각) Klangio 등 상용 이미지 OMR API — 이미지당 단가 비공개로 예산 리스크. homr(oemer 개선판) — 정확도는 낫지만 딥러닝이라 GPU 비용 필요.
+- ⚠️ 과거 교훈(oemer 시절): Dockerfile에 빌드 시 모델 warm-up을 넣으면 HF 빌더 리소스 초과로 BUILD_ERROR. Audiveris는 모델 다운로드가 없어 해당 없음.
 
 ### 🟡 개선 여지 (선택)
 - GitHub Actions의 Node 20 deprecation 경고 → 액션 최신 버전으로 갱신

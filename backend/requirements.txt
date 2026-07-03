@@ -1,6 +1,9 @@
+# LOCAL-DEV requirements (oemer fallback engine). The Docker image uses
+# requirements-server.txt + Audiveris instead and does NOT install oemer.
+#
 # Note: oemer pulls onnxruntime-gpu, which falls back to CPU when no GPU is
-# present (as on HF free Spaces). Do NOT also list plain onnxruntime — having
-# both installed conflicts.
+# present. Do NOT also list plain onnxruntime — having both installed
+# conflicts.
 fastapi
 uvicorn[standard]
 python-multipart

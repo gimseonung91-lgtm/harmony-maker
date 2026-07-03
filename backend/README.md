@@ -10,40 +10,56 @@ pinned: false
 
 # Harmony Maker OMR backend
 
-FastAPI service that runs [oemer](https://github.com/BreezeWhite/oemer) optical
-music recognition. Upload a sheet-music image and get MusicXML back.
+FastAPI service that runs optical music recognition. Upload a sheet-music
+image and get MusicXML back.
+
+**Engine:** [Audiveris](https://github.com/Audiveris/audiveris) (in the Docker
+image) — classical-CV OMR that runs in tens of seconds on CPU and is generally
+more accurate on printed scores than the previous deep-learning engine
+([oemer](https://github.com/BreezeWhite/oemer), which took 10+ minutes per
+page on free CPU hardware). `app.py` auto-detects the engine: it uses
+Audiveris when the launcher is found (`AUDIVERIS_BIN` env var or on PATH) and
+falls back to oemer otherwise (local dev).
 
 The uploaded image and all generated files are deleted immediately after each
 request — nothing is stored.
 
 ## Endpoints
-- `GET /` — health check
+- `GET /` — health check (includes which `engine` is active)
 - `POST /omr` — multipart form field `file` (image) → returns MusicXML (text)
 
 ## Deploy on Hugging Face Spaces
 1. Create a new **Space** → SDK: **Docker**.
 2. Push these `backend/` files to the Space repo (this README's frontmatter
    configures it automatically).
-3. First request after a cold start is slow (model download + CPU inference).
+3. No model downloads — cold starts are fast.
 
 ### Hardware tier (speed vs. cost)
-The **free CPU Basic** tier is too slow for real use — a single page can take
-**over 600s** and time out. Upgrade the Space's hardware in
-**Settings → Space variables and secrets → Hardware**:
+Audiveris is CPU-friendly, so the **free CPU Basic** tier may already be
+usable (expect roughly 30–90s per page). If that's too slow, upgrade in the
+Space's **Settings → Hardware**:
 
-| Tier | Cost | Approx. time / page |
+| Tier | Cost | Notes |
 |---|---|---|
-| CPU Basic (free) | $0 | >600s (often times out) |
-| CPU Upgrade | ~$0.03/hr | tens of seconds |
-| Nvidia T4 small | ~$0.40/hr | a few seconds |
+| CPU Basic (free) | $0 | try this first with Audiveris |
+| CPU Upgrade | ~$0.03/hr | faster cores, ~2× speedup |
 
-Billing is per-second while the Space is running, so set a short **sleep
-timeout** (Settings → "Sleep time") to avoid paying while idle. Start with
-**CPU Upgrade** — it's the cheapest fix and should be enough; only move to a
-GPU tier if pages are still too slow.
+GPU tiers are unnecessary — Audiveris does not use a GPU. If you pay for an
+upgrade, set a short **sleep timeout** (Settings → "Sleep time") so the Space
+suspends while idle.
 
 ## Run locally
+
+**Option A — oemer fallback (no Java needed, slow):**
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt   # includes oemer
+uvicorn app:app --host 0.0.0.0 --port 7860
+```
+
+**Option B — Audiveris (fast):** install
+[Audiveris](https://github.com/Audiveris/audiveris/releases) for your OS, then:
+```bash
+pip install -r requirements-server.txt
+set AUDIVERIS_BIN=C:\Program Files\Audiveris\Audiveris.exe   # Windows example
 uvicorn app:app --host 0.0.0.0 --port 7860
 ```

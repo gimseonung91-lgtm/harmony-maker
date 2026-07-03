@@ -31,8 +31,11 @@ def _deskew_angle(gray):
     return float(np.median(angles)) if angles else 0.0
 
 
-def preprocess_image(in_path, out_path):
+def preprocess_image(in_path, out_path, max_width=1500):
     """Clean up a sheet-music image and write the result to out_path.
+
+    max_width caps the output width (None = never downscale). oemer needs the
+    cap to keep CPU inference affordable; Audiveris prefers full resolution.
 
     Returns True on success. Raises if the image can't be read.
     """
@@ -56,16 +59,17 @@ def preprocess_image(in_path, out_path):
             gray, rot, (w, h), flags=cv2.INTER_CUBIC, borderValue=255
         )
 
-    # Normalize resolution. oemer runs CPU inference in overlapping patches, so
-    # cost scales with pixel count. Clamping width to ~1500 keeps printed scores
-    # readable while cutting inference time several-fold versus full-res scans.
+    # Normalize resolution. Tiny images are upscaled so stafflines survive;
+    # oemer additionally needs a width cap (CPU inference in overlapping
+    # patches scales with pixel count), while Audiveris is fast and more
+    # accurate at full resolution (max_width=None skips the downscale).
     h, w = gray.shape
-    TARGET_MIN_W, TARGET_MAX_W = 1000, 1500
+    TARGET_MIN_W = 1000
     if w < TARGET_MIN_W:
         scale = TARGET_MIN_W / w
         gray = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_CUBIC)
-    elif w > TARGET_MAX_W:
-        scale = TARGET_MAX_W / w
+    elif max_width is not None and w > max_width:
+        scale = max_width / w
         gray = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
 
     # NOTE: deliberately avoid hard binarization / heavy denoising here — both

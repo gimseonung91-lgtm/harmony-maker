@@ -1,0 +1,7 @@
+# Server (Docker) dependencies — the OMR engine is Audiveris, installed as a
+# system package in the Dockerfile, so no oemer/onnxruntime here.
+fastapi
+uvicorn[standard]
+python-multipart
+opencv-python-headless
+numpy
