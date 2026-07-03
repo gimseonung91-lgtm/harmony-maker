@@ -60,8 +60,11 @@ export function useVexFlow(notes, projectInfo, onLayout) {
           duration: n.duration ?? 'q',
           clef: projectInfo.clef ?? 'treble',
         })
-        if (key.includes('#')) sn.addModifier(new Accidental('#'), 0)
-        if (key.includes('b') && !key.startsWith('b')) sn.addModifier(new Accidental('b'), 0)
+        // Read the accidental from the pitch itself ("F#4" / "Bb4") — checking
+        // the lowercase VexFlow key would miss the flat on "bb/4" (B-flat).
+        const accidental = n.pitch.length > 2 ? n.pitch[1] : null
+        if (accidental === '#') sn.addModifier(new Accidental('#'), 0)
+        else if (accidental === 'b') sn.addModifier(new Accidental('b'), 0)
 
         // Lyric rendered beneath the note
         if (n.lyric) {

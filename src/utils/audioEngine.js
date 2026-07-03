@@ -126,8 +126,9 @@ export async function play(tracks, bpm, onEnd) {
     return
   }
 
-  // Schedule a natural stop just after the last note ends
-  const endSeconds = maxBeats * (60 / bpm) + 0.3
+  // Schedule a natural stop after the last note's release tail (0.6s) fades,
+  // so recorded downloads don't clip the final note.
+  const endSeconds = maxBeats * (60 / bpm) + 0.8
   stopEventId = Tone.Transport.scheduleOnce(() => {
     stop()
     onEnd?.()

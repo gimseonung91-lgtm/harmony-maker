@@ -1,5 +1,9 @@
 // Diatonic scale degrees for each key (chromatic index 0=C … 11=B)
 const CHROMATIC = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+// Flat spellings of the same chromatic indexes, used for flat key signatures
+const CHROMATIC_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+// Keys whose diatonic notes are spelled with flats (F major has Bb, etc.)
+const FLAT_KEYS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'])
 
 // Major diatonic steps as semitone offsets from root
 const MAJOR_INTERVALS = [0, 2, 4, 5, 7, 9, 11]
@@ -22,7 +26,8 @@ function parsePitch(pitch) {
 }
 
 function chromaticIndex(noteName) {
-  return CHROMATIC.indexOf(noteName)
+  const sharp = CHROMATIC.indexOf(noteName)
+  return sharp !== -1 ? sharp : CHROMATIC_FLAT.indexOf(noteName)
 }
 
 function buildPitch(name, octave) {
@@ -55,9 +60,12 @@ export function computeHarmony(pitch, keySignature) {
   const thirdOctave = third < noteChroma ? parsed.octave + 1 : parsed.octave
   const fifthOctave = fifth < noteChroma ? parsed.octave + 1 : parsed.octave
 
+  // Spell the result to match the key signature (Bb in F major, not A#)
+  const spelling = FLAT_KEYS.has(keySignature) ? CHROMATIC_FLAT : CHROMATIC
+
   return [
-    buildPitch(CHROMATIC[third], thirdOctave),
-    buildPitch(CHROMATIC[fifth], fifthOctave),
+    buildPitch(spelling[third], thirdOctave),
+    buildPitch(spelling[fifth], fifthOctave),
   ]
 }
 

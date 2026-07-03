@@ -17,7 +17,7 @@ export const STAFF_TOP_OFFSET = 44
 export function DropCanvas() {
   const {
     melody, projectInfo, selectedDuration, selectedNoteId,
-    notePositions, setNotePositions, addNote, removeNote, toggleTie,
+    notePositions, setNotePositions, addNoteAt, removeNote, toggleTie,
     selectNote, setLyric,
   } = useHarmonyStore()
 
@@ -51,7 +51,7 @@ export function DropCanvas() {
     const g = pitchFromEvent(e)
     if (!g) return
     const index = notePositions.filter((p) => p.x < g.x).length
-    addNote({ type: 'note', pitch: g.pitch, duration: selectedDuration }, index)
+    addNoteAt({ type: 'note', pitch: g.pitch, duration: selectedDuration }, index)
   }
 
   return (

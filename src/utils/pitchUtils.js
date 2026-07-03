@@ -13,6 +13,7 @@ export const RESTS = [
   { id: 'h',  label: 'Half rest',    symbol: '𝄼' },
   { id: 'q',  label: 'Quarter rest', symbol: '𝄽' },
   { id: '8',  label: 'Eighth rest',  symbol: '𝄾' },
+  { id: '16', label: '16th rest',    symbol: '𝄿' },
 ]
 
 export const PITCHES_IN_OCTAVE = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
