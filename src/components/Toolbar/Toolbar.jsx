@@ -201,9 +201,10 @@ function ImportPanel() {
 
       <SectionLabel>Sheet-music image (OMR)</SectionLabel>
       <p style={styles.hint}>
-        Upload a photo or scan of a <strong>printed</strong> score. Clear,
-        flat, straight-on full pages work best; handwritten scores and small
-        crops usually fail.
+        Upload a photo or scan of a <strong>printed</strong> score at{' '}
+        <strong>high resolution</strong> (a 300 DPI scan or full-size camera
+        photo — small web previews fail). Clear, flat, straight-on full pages
+        work best; handwritten scores usually fail.
       </p>
       <input
         ref={imgInputRef}

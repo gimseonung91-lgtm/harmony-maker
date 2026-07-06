@@ -43,8 +43,11 @@ export async function analyzeScoreImage(file) {
       body: form,
     })
     if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      throw new Error(`OMR backend error (${res.status}). ${detail.slice(0, 200)}`)
+      const raw = await res.text().catch(() => '')
+      // FastAPI wraps error messages as {"detail": "..."} — unwrap for display
+      let detail = raw
+      try { detail = JSON.parse(raw).detail ?? raw } catch { /* not JSON */ }
+      throw new Error(`${String(detail).slice(0, 300)} (OMR backend ${res.status})`)
     }
     const xml = await res.text()
     return { lines: parseMusicXML(xml), usedBackend: true }

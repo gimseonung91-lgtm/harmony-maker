@@ -31,11 +31,13 @@ def _deskew_angle(gray):
     return float(np.median(angles)) if angles else 0.0
 
 
-def preprocess_image(in_path, out_path, max_width=1500):
+def preprocess_image(in_path, out_path, max_width=1500, min_width=1000):
     """Clean up a sheet-music image and write the result to out_path.
 
     max_width caps the output width (None = never downscale). oemer needs the
     cap to keep CPU inference affordable; Audiveris prefers full resolution.
+    min_width upscales small images so staff interline spacing clears the
+    engine's minimum (Audiveris rejects sheets below ~10px interline).
 
     Returns True on success. Raises if the image can't be read.
     """
@@ -64,9 +66,8 @@ def preprocess_image(in_path, out_path, max_width=1500):
     # patches scales with pixel count), while Audiveris is fast and more
     # accurate at full resolution (max_width=None skips the downscale).
     h, w = gray.shape
-    TARGET_MIN_W = 1000
-    if w < TARGET_MIN_W:
-        scale = TARGET_MIN_W / w
+    if w < min_width:
+        scale = min_width / w
         gray = cv2.resize(gray, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_CUBIC)
     elif max_width is not None and w > max_width:
         scale = max_width / w

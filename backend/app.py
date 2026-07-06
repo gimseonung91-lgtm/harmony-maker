@@ -131,10 +131,13 @@ async def omr(file: UploadFile = File(...)):
         omr_input = img_path
         try:
             pre_path = os.path.join(tmpdir, "preprocessed.png")
-            # oemer needs a width cap for CPU cost; Audiveris prefers full res.
+            # oemer needs a width cap for CPU cost; Audiveris prefers full res
+            # and rejects sheets whose staff interline is under ~10px, so small
+            # images (web previews, thumbnails) get upscaled aggressively.
             preprocess_image(
                 img_path, pre_path,
                 max_width=None if ENGINE == "audiveris" else 1500,
+                min_width=2200 if ENGINE == "audiveris" else 1000,
             )
             omr_input = pre_path
         except Exception as exc:  # noqa: BLE001 — preprocessing is best-effort
@@ -153,15 +156,21 @@ async def omr(file: UploadFile = File(...)):
             # Almost all end-user failures are staff detection on a too-small,
             # skewed or low-quality image. Return a clear, actionable message
             # rather than a raw traceback (full output is logged above).
-            raise HTTPException(
-                status_code=422,
-                detail=(
+            if "interline value" in full or "resolution is too low" in full:
+                detail = (
+                    "The image resolution is too low — the staff lines are only "
+                    "a few pixels apart. Please upload a larger scan or photo "
+                    "(aim for a page at least ~2000px wide, e.g. a 300 DPI scan "
+                    "or a full-resolution camera picture, not a web preview)."
+                )
+            else:
+                detail = (
                     "Could not recognize the score. Recognition needs a clear, "
                     "flat, straight-on image of a printed score — a full page "
                     "scan works best. Small partial crops, photos at an angle, "
                     "and handwritten scores usually fail."
-                ),
-            )
+                )
+            raise HTTPException(status_code=422, detail=detail)
 
         return xml
 
