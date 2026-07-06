@@ -245,6 +245,17 @@ npm run dev
 - **자동 저장**: localStorage `harmony-maker-project-v1`, 500ms 디바운스, 로드 시 복원.
 - **실행 취소**: 멜로디 편집 액션들이 `_undo` 스택(최대 50)에 스냅샷 저장, Ctrl/Cmd+Z → `undo()` (가사 입력은 미포함).
 
+### ✅ 프론트엔드 아키텍처 리팩토링 (2026-07-06, "value-up refactor" 계획 실행)
+- **테스트 하네스**: Vitest 3 + jsdom + React Testing Library (고정 버전). `npm test` — utils/store/컴포넌트/훅/서비스 characterization 테스트. 리팩토링 전 현재 동작을 테스트로 고정한 뒤 코드를 이동함.
+- **duration 단일 레지스트리**: `src/domain/durations.js` — id/라벨/심볼/쉼표심볼/beats/VexFlow코드/Tone코드/단축키의 유일한 정의처. **점4분음표(qd, 1.5박, 단축키 6, 쉼표 팔레트 제외) 신규 추가.** 알 수 없는 duration id는 모든 소비자에서 4분음표로 정규화.
+- **스토어 슬라이스**: `src/store/slices/{project,editor,line,playbackUi}Slice.js` + `persistence.js`(저장 키·형태 불변), `useHarmonyStore` 공개 API 완전 동일.
+- **컨트롤러 훅**: `src/hooks/{useEditorShortcuts,useScoreDragAndDrop,usePlaybackController}.js` — App.jsx는 62논리줄의 순수 컴포지션. 비동기 액션은 `{ok:true}|{ok:false,error}` 반환(unhandled rejection 없음).
+- **지연 로딩**: `src/services/{audioService,exportService}.js`의 캐시된 dynamic import로 Tone/jsPDF/html2canvas를 eager 그래프에서 제거 — **엔트리 1,034→225kB raw (-78.8%), gzip 303→73kB (-76.6%)**. `npm run build:budget`이 회귀를 차단.
+- **반응형 셸**: `AppHeader` 컴포넌트 + `app-shell.css`/`toolbar.css`/`AppHeader.css`. 데스크톱(≥1024) 기존 고정 사이드바 유지, 768–1023 우측 오버레이, <768 하단 시트(max 55dvh, safe-area). 실측: 375/768/1280 모두 가로 오버플로 0, 악보 폭 343/728/1020px, 닫기 시 헤더 토글로 포커스 복원.
+- **셀렉터 협소화**: 베어 `useHarmonyStore()` 호출 0건, 렌더 경계 테스트(Profiler 커밋 카운트)로 고정.
+- **품질 게이트 스크립트**: `scripts/check-module-size.mjs`(App≤180/Toolbar≤120/기타≤250 논리줄), `scripts/check-bundle-budget.mjs`(+`bundle-baseline.json`).
+- 접근성: duration 버튼/탭/토글/라인 카드 버튼에 aria-label·aria-pressed·aria-expanded, 모바일 닫기 컨트롤.
+
 ### 🟡 개선 여지 (선택)
 - GitHub Actions의 Node 20 deprecation 경고 → 액션 최신 버전으로 갱신
 - 4마디 한 줄이 오선지에 다소 빽빽 → 마디선/줄바꿈 렌더 개선(현재 SOFT voice, 마디선 없음)

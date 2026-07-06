@@ -1,20 +1,5 @@
 // VexFlow pitch string ↔ our internal "C4" format
-
-export const DURATIONS = [
-  { id: 'w',  label: 'Whole',   symbol: '𝅝' },
-  { id: 'h',  label: 'Half',    symbol: '𝅗𝅥' },
-  { id: 'q',  label: 'Quarter', symbol: '♩' },
-  { id: '8',  label: 'Eighth',  symbol: '♪' },
-  { id: '16', label: '16th',    symbol: '𝅘𝅥𝅯' },
-]
-
-export const RESTS = [
-  { id: 'w',  label: 'Whole rest',   symbol: '𝄻' },
-  { id: 'h',  label: 'Half rest',    symbol: '𝄼' },
-  { id: 'q',  label: 'Quarter rest', symbol: '𝄽' },
-  { id: '8',  label: 'Eighth rest',  symbol: '𝄾' },
-  { id: '16', label: '16th rest',    symbol: '𝄿' },
-]
+// (Duration metadata lives in src/domain/durations.js — the one registry.)
 
 export const PITCHES_IN_OCTAVE = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
 

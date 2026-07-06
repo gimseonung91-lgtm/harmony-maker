@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { pitchToVex } from '../utils/pitchUtils'
+import { getDuration } from '../domain/durations'
 
 /**
  * Renders a single monophonic line (melody or harmony) onto a VexFlow canvas.
@@ -24,7 +25,7 @@ export function useVexFlow(notes, projectInfo, onLayout) {
       if (cancelled) return
       el.innerHTML = ''
 
-      const { Renderer, Stave, StaveNote, BarNote, Voice, Formatter, Accidental, Beam, StaveTie, Annotation } = VF
+      const { Renderer, Stave, StaveNote, BarNote, Dot, Voice, Formatter, Accidental, Beam, StaveTie, Annotation } = VF
 
       const renderer = new Renderer(el, Renderer.Backends.SVG)
       const width = el.clientWidth || 900
@@ -45,21 +46,26 @@ export function useVexFlow(notes, projectInfo, onLayout) {
 
       // ── Build VexFlow tickables ───────────────────────────────────
       const vexNotes = notes.map((n) => {
+        const meta = getDuration(n.duration) // unknown ids normalize to quarter
+
         if (n.type === 'rest') {
           // Rest: position on the middle line, duration suffixed with 'r'
-          return new StaveNote({
+          const rest = new StaveNote({
             keys: ['b/4'],
-            duration: `${n.duration ?? 'q'}r`,
+            duration: `${meta.vex}r`,
             clef: projectInfo.clef ?? 'treble',
           })
+          if (meta.vexDots > 0) Dot.buildAndAttach([rest], { all: true })
+          return rest
         }
 
         const key = pitchToVex(n.pitch)
         const sn = new StaveNote({
           keys: [key],
-          duration: n.duration ?? 'q',
+          duration: meta.vex,
           clef: projectInfo.clef ?? 'treble',
         })
+        if (meta.vexDots > 0) Dot.buildAndAttach([sn], { all: true })
         // Read the accidental from the pitch itself ("F#4" / "Bb4") — checking
         // the lowercase VexFlow key would miss the flat on "bb/4" (B-flat).
         const accidental = n.pitch.length > 2 ? n.pitch[1] : null
@@ -79,14 +85,13 @@ export function useVexFlow(notes, projectInfo, onLayout) {
       // Insert barlines wherever the accumulated duration completes a
       // measure of the current time signature (boundaries that fall inside
       // a note are simply skipped — no notes are split).
-      const BEATS = { w: 4, h: 2, q: 1, 8: 0.5, 16: 0.25 }
       const [tsNum, tsDen] = (projectInfo.timeSignature ?? '4/4').split('/').map(Number)
       const beatsPerMeasure = (tsNum || 4) * (4 / (tsDen || 4))
       const tickables = []
       let acc = 0
       vexNotes.forEach((vn, i) => {
         tickables.push(vn)
-        acc += BEATS[notes[i].duration] ?? 1
+        acc += getDuration(notes[i].duration).beats
         const rem = acc % beatsPerMeasure
         const atBoundary = rem < 1e-6 || beatsPerMeasure - rem < 1e-6
         if (atBoundary && i < vexNotes.length - 1) tickables.push(new BarNote())

@@ -1,0 +1,111 @@
+/* Workstation shell: root column, scrolling score workspace, and the
+   responsive behavior of the tool surface.
+
+   ≥1024px  fixed right sidebar (unchanged desktop layout)
+   768–1023 the same surface overlays the score, anchored right
+   <768     the surface anchors to the bottom, full width, max 55dvh */
+
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.melody-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.line-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Mobile/tablet close control inside the tool surface (hidden on desktop) */
+.toolbar-close {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  /* The tool surface overlays the score instead of consuming its width.
+     Positioned inside .app-body (position: relative) so a wrapped, taller
+     header can never be covered. */
+  .toolbar-aside {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  }
+
+  .toolbar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-main {
+    padding: 16px;
+  }
+
+  .toolbar-aside {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    min-width: 0;
+    max-height: 55dvh;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

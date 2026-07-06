@@ -1,0 +1,133 @@
+/* Toolbar surface: tabs + panel body. Values mirror the previous inline
+   styles exactly — the dark workstation design is a preserved contract. */
+
+.toolbar-aside {
+  width: var(--toolbar-width);
+  min-width: var(--toolbar-width);
+  border-left: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.toolbar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.toolbar-tab {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.toolbar-tab--active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+
+.toolbar-body {
+  padding: 0 12px 16px;
+  overflow-y: auto;
+}
+
+.toolbar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 12px 0 6px;
+}
+
+.toolbar-duration-row {
+  display: flex;
+  gap: 4px;
+}
+
+.toolbar-duration-btn {
+  flex: 1;
+  padding: 6px 4px;
+  font-size: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.toolbar-duration-btn--active {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.toolbar-note-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.toolbar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.toolbar-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.toolbar-input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 6px 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+.toolbar-upload-btn {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px dashed var(--border);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.toolbar-upload-btn--image {
+  border-style: dotted;
+  opacity: 0.85;
+}
+
+.toolbar-status {
+  font-size: 11px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.toolbar-status--error { color: var(--danger); }
+.toolbar-status--loading { color: var(--text-secondary); }
+.toolbar-status--success { color: var(--success); }
+
+.toolbar-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 4px;
+}

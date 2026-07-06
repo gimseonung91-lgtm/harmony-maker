@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { ScoreCanvas } from '../Canvas/ScoreCanvas'
 import { TrackToggle } from '../TrackToggle'
@@ -9,7 +10,13 @@ const LABELS = {
 
 export function DerivedLines() {
   const { derivedLines, projectInfo, enabledTracks, toggleTrack, removeDerivedLine } =
-    useHarmonyStore()
+    useHarmonyStore(useShallow((s) => ({
+      derivedLines: s.derivedLines,
+      projectInfo: s.projectInfo,
+      enabledTracks: s.enabledTracks,
+      toggleTrack: s.toggleTrack,
+      removeDerivedLine: s.removeDerivedLine,
+    })))
 
   if (derivedLines.length === 0) return null
 
@@ -28,6 +35,7 @@ export function DerivedLines() {
               onClick={() => removeDerivedLine(line.id)}
               style={styles.deleteBtn}
               title="Remove this harmony line"
+              aria-label={`Remove the ${LABELS[line.type] ?? line.type} line`}
             >
               ✕
             </button>

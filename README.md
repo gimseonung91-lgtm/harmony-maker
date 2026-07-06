@@ -16,7 +16,8 @@
 - 💾 **자동 저장 & 실행 취소** — 새로고침해도 작업 유지, Ctrl+Z로 편집 되돌리기
 - 🔊 **재생 & 음원 다운로드** — Tone.js 다중 트랙 재생, 트랙별 음소거, WAV/WebM 내보내기
 - 🖨️ **PDF 내보내기** — 작성한 모든 줄을 A4 PDF로 저장
-- ✏️ 가사 입력, 쉼표, 이음줄(tie), 자동 빔(beam), 숫자키(1~5) 음길이 전환
+- ✏️ 가사 입력, 쉼표, 이음줄(tie), 자동 빔(beam), 점4분음표, 숫자키(1~6) 음길이 전환 — `6` = 점4분음표(1.5박)
+- 📱 **반응형** — 데스크톱은 고정 사이드바, 태블릿(<1024px)은 우측 오버레이, 모바일(<768px)은 하단 시트로 도구함이 전환
 
 ## 기술 스택
 
@@ -33,6 +34,12 @@
 npm install
 npm run dev
 # → http://localhost:5173/harmony-maker/  (끝의 /harmony-maker/ 경로 필수)
+
+# 테스트 / 품질 게이트
+npm test               # Vitest 단위·컴포넌트 테스트
+npm run test:coverage  # 커버리지 리포트
+npm run check:modules  # 모듈 크기 한도 검사 (App≤180, Toolbar≤120, 기타≤250 논리줄)
+npm run build:budget   # 빌드 + eager 번들 예산 검사 (Tone/jsPDF/html2canvas 지연 로딩 강제)
 
 # (선택) 이미지 OMR 백엔드
 cd backend

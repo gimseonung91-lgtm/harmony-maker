@@ -1,0 +1,13 @@
+{
+  "capturedAt": "2026-07-06",
+  "note": "Pre-refactor eager entry graph (Tone + html2canvas + app statically imported; jsPDF chunks pulled eagerly via static import of pdfExport). VexFlow was already dynamic.",
+  "eager": {
+    "entry": "assets/index-C9qpu1Om.js",
+    "rawBytes": 1059133,
+    "gzipBytes": 310609,
+    "chunks": [
+      { "file": "assets/index-C9qpu1Om.js", "rawKB": 1034.31, "gzipKB": 303.33 }
+    ]
+  },
+  "heavyPackagesInEagerClosure": ["tone", "html2canvas", "jspdf"]
+}

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
+import { useShallow } from 'zustand/react/shallow'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { useVexFlow } from '../../hooks/useVexFlow'
 import { yToPitch } from '../../utils/pitchUtils'
@@ -19,7 +20,19 @@ export function DropCanvas() {
     melody, projectInfo, selectedDuration, selectedNoteId,
     notePositions, setNotePositions, addNoteAt, removeNote, toggleTie,
     selectNote, setLyric,
-  } = useHarmonyStore()
+  } = useHarmonyStore(useShallow((s) => ({
+    melody: s.melody,
+    projectInfo: s.projectInfo,
+    selectedDuration: s.selectedDuration,
+    selectedNoteId: s.selectedNoteId,
+    notePositions: s.notePositions,
+    setNotePositions: s.setNotePositions,
+    addNoteAt: s.addNoteAt,
+    removeNote: s.removeNote,
+    toggleTie: s.toggleTie,
+    selectNote: s.selectNote,
+    setLyric: s.setLyric,
+  })))
 
   const { containerRef: vexRef } = useVexFlow(melody, projectInfo, setNotePositions)
 
@@ -150,6 +163,8 @@ export function DropCanvas() {
                 <button
                   onClick={() => toggleTie(n.id)}
                   title="Tie to next note"
+                  aria-label={`Tie ${n.pitch} to the next note`}
+                  aria-pressed={n.tie}
                   style={{ ...miniBtn, ...(n.tie ? tieActive : {}) }}
                 >
                   ⌒
@@ -158,6 +173,7 @@ export function DropCanvas() {
               <button
                 onClick={() => removeNote(n.id)}
                 title="Delete this note"
+                aria-label={`Delete ${n.type === 'rest' ? `${n.duration} rest` : n.pitch}`}
                 style={{ ...miniBtn, ...deleteBtn }}
               >
                 ✕

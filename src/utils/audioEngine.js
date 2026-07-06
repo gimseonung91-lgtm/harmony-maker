@@ -1,13 +1,5 @@
 import * as Tone from 'tone'
-
-// VexFlow duration id → Tone.js notation + beats (quarter = 1 beat)
-const DURATION_MAP = {
-  w:  { notation: '1n',  beats: 4 },
-  h:  { notation: '2n',  beats: 2 },
-  q:  { notation: '4n',  beats: 1 },
-  '8':  { notation: '8n',  beats: 0.5 },
-  '16': { notation: '16n', beats: 0.25 },
-}
+import { beatsOf } from '../domain/durations'
 
 // Our pitch "C4" / "F#4" is already valid Tone.js note format, but VexFlow uses
 // lowercase + slash. Our store keeps "C4" style, so pass through directly.
@@ -29,20 +21,18 @@ export function notesToEvents(notes) {
 
   while (i < notes.length) {
     const n = notes[i]
-    const map = DURATION_MAP[n.duration] ?? DURATION_MAP.q
 
     if (n.type === 'rest' || !n.pitch) {
-      beat += map.beats
+      beat += beatsOf(n.duration)
       i += 1
       continue
     }
 
     // Accumulate this note's beats, extending across any tied chain
-    let beats = map.beats
+    let beats = beatsOf(n.duration)
     let j = i
     while (notes[j]?.tie && notes[j + 1] && notes[j + 1].type !== 'rest') {
-      const nextMap = DURATION_MAP[notes[j + 1].duration] ?? DURATION_MAP.q
-      beats += nextMap.beats
+      beats += beatsOf(notes[j + 1].duration)
       j += 1
     }
 

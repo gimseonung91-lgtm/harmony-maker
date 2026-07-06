@@ -1,10 +1,20 @@
+import { useShallow } from 'zustand/react/shallow'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { ScoreCanvas } from '../Canvas/ScoreCanvas'
 import { TrackToggle } from '../TrackToggle'
 
 export function ImportedLines() {
   const { importedLines, projectInfo, enabledTracks, toggleTrack, removeLine, moveLine, splitLine, editImportedLine } =
-    useHarmonyStore()
+    useHarmonyStore(useShallow((s) => ({
+      importedLines: s.importedLines,
+      projectInfo: s.projectInfo,
+      enabledTracks: s.enabledTracks,
+      toggleTrack: s.toggleTrack,
+      removeLine: s.removeLine,
+      moveLine: s.moveLine,
+      splitLine: s.splitLine,
+      editImportedLine: s.editImportedLine,
+    })))
 
   if (importedLines.length === 0) return null
 
@@ -27,6 +37,7 @@ export function ImportedLines() {
                   onClick={() => editImportedLine(line.id)}
                   style={{ ...btnStyle(false), color: 'var(--accent)' }}
                   title="Load this line into the melody editor (replaces the current melody; Ctrl+Z restores it)"
+                  aria-label={`Edit line ${i + 1} in the melody editor`}
                 >
                   ✎ Edit
                 </button>
@@ -35,6 +46,7 @@ export function ImportedLines() {
                   disabled={i === 0}
                   style={btnStyle(i === 0)}
                   title="Move line up"
+                  aria-label={`Move line ${i + 1} up`}
                 >
                   ↑
                 </button>
@@ -43,6 +55,7 @@ export function ImportedLines() {
                   disabled={i === importedLines.length - 1}
                   style={btnStyle(i === importedLines.length - 1)}
                   title="Move line down"
+                  aria-label={`Move line ${i + 1} down`}
                 >
                   ↓
                 </button>
@@ -51,6 +64,7 @@ export function ImportedLines() {
                   disabled={measureCount <= 1}
                   style={btnStyle(measureCount <= 1)}
                   title="Split into one line per measure"
+                  aria-label={`Split line ${i + 1} into one line per measure`}
                 >
                   Split
                 </button>
@@ -58,6 +72,7 @@ export function ImportedLines() {
                   onClick={() => removeLine(line.id)}
                   style={{ ...btnStyle(false), color: 'var(--danger)' }}
                   title="Delete this line"
+                  aria-label={`Delete line ${i + 1}`}
                 >
                   ✕
                 </button>
