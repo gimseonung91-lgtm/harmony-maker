@@ -17,6 +17,9 @@ npm-debug.log*
 # Vite cache
 .vite/
 
+# Test coverage output
+coverage/
+
 # Local env
 .env
 .env.local
