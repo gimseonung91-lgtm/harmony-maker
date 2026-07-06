@@ -9,6 +9,8 @@
 // Each note is tagged with its measure index so a line can later be split into
 // individual measures.
 
+import { DOTTED_VARIANT } from '../domain/durations'
+
 const MEASURES_PER_LINE = 4
 
 // MusicXML <type> → our duration id
@@ -23,8 +25,9 @@ const TYPE_MAP = {
   '64th': '16',
 }
 
-function mapType(typeText) {
-  return TYPE_MAP[typeText] ?? 'q'
+function mapType(typeText, dotted) {
+  const base = TYPE_MAP[typeText] ?? 'q'
+  return dotted ? (DOTTED_VARIANT[base] ?? base) : base
 }
 
 function alterToAccidental(alter) {
@@ -40,7 +43,10 @@ function parseMeasureNotes(measure, measureIdx) {
   measure.querySelectorAll('note').forEach((noteEl) => {
     if (noteEl.querySelector('chord')) return // keep the line monophonic
 
-    const duration = mapType(noteEl.querySelector('type')?.textContent?.trim())
+    const duration = mapType(
+      noteEl.querySelector('type')?.textContent?.trim(),
+      noteEl.querySelector('dot') != null,
+    )
 
     if (noteEl.querySelector('rest')) {
       notes.push({ type: 'rest', pitch: null, duration, tie: false, measure: measureIdx })

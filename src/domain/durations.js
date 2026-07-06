@@ -18,6 +18,11 @@ export const DURATION_ENTRIES = Object.freeze([
     beats: 2, vex: 'h', vexDots: 0, tone: '2n', shortcut: '2',
   }),
   Object.freeze({
+    id: 'hd', label: 'Dotted half', symbol: '𝅗𝅥.',
+    restLabel: null, restSymbol: null, showInRestPalette: false,
+    beats: 3, vex: 'h', vexDots: 1, tone: '2n.', shortcut: '7',
+  }),
+  Object.freeze({
     id: 'q', label: 'Quarter', symbol: '♩',
     restLabel: 'Quarter rest', restSymbol: '𝄽', showInRestPalette: true,
     beats: 1, vex: 'q', vexDots: 0, tone: '4n', shortcut: '3',
@@ -33,11 +38,24 @@ export const DURATION_ENTRIES = Object.freeze([
     beats: 0.5, vex: '8', vexDots: 0, tone: '8n', shortcut: '4',
   }),
   Object.freeze({
+    id: '8d', label: 'Dotted eighth', symbol: '♪.',
+    restLabel: null, restSymbol: null, showInRestPalette: false,
+    beats: 0.75, vex: '8', vexDots: 1, tone: '8n.', shortcut: '8',
+  }),
+  Object.freeze({
     id: '16', label: '16th', symbol: '𝅘𝅥𝅯',
     restLabel: '16th rest', restSymbol: '𝄿', showInRestPalette: true,
     beats: 0.25, vex: '16', vexDots: 0, tone: '16n', shortcut: '5',
   }),
+  Object.freeze({
+    id: '16d', label: 'Dotted 16th', symbol: '𝅘𝅥𝅯.',
+    restLabel: null, restSymbol: null, showInRestPalette: false,
+    beats: 0.375, vex: '16', vexDots: 1, tone: '16n.', shortcut: '9',
+  }),
 ])
+
+// Base duration id → its dotted variant (used by the MusicXML importer)
+export const DOTTED_VARIANT = Object.freeze({ h: 'hd', q: 'qd', 8: '8d', 16: '16d' })
 
 const BY_ID = new Map(DURATION_ENTRIES.map((e) => [e.id, e]))
 const QUARTER = BY_ID.get('q')

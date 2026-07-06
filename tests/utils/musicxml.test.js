@@ -48,6 +48,18 @@ describe('parseMusicXML', () => {
     expect(lines[1].notes).toHaveLength(2)
   })
 
+  it('maps <dot/> to the dotted duration variants (whole stays whole)', () => {
+    const dotted = (step, type) => `
+      <note><pitch><step>${step}</step><octave>4</octave></pitch>
+      <type>${type}</type><dot/></note>`
+    const xml = wrap(`<measure number="1">
+      ${dotted('C', 'half')}${dotted('D', 'quarter')}${dotted('E', 'eighth')}
+      ${dotted('F', '16th')}${dotted('G', 'whole')}
+    </measure>`)
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.duration)).toEqual(['hd', 'qd', '8d', '16d', 'w'])
+  })
+
   it('maps unknown <type> to quarter and clamps exotic types', () => {
     const xml = wrap(`<measure number="1">
       ${NOTE('C', 4, 'mystery')}${NOTE('D', 4, '32nd')}${NOTE('E', 4, 'breve')}

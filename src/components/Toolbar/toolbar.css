@@ -47,12 +47,12 @@
 }
 
 .toolbar-duration-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
 }
 
 .toolbar-duration-btn {
-  flex: 1;
   padding: 6px 4px;
   font-size: 16px;
   border-radius: var(--radius-sm);

@@ -35,9 +35,12 @@ function Shortcuts() {
 }
 
 describe('useEditorShortcuts', () => {
-  it('maps number keys 1-6 to durations (6 = dotted quarter)', () => {
+  it('maps number keys 1-9 to durations (6-9 = dotted variants)', () => {
     render(<Shortcuts />)
-    for (const [key, dur] of [['1', 'w'], ['2', 'h'], ['3', 'q'], ['4', '8'], ['5', '16'], ['6', 'qd']]) {
+    for (const [key, dur] of [
+      ['1', 'w'], ['2', 'h'], ['3', 'q'], ['4', '8'], ['5', '16'],
+      ['6', 'qd'], ['7', 'hd'], ['8', '8d'], ['9', '16d'],
+    ]) {
       fireEvent.keyDown(window, { key })
       expect(g().selectedDuration).toBe(dur)
     }

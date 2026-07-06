@@ -4,8 +4,10 @@ import {
 } from '../../src/domain/durations'
 
 describe('duration registry', () => {
-  it('contains exactly the six entries in notation order', () => {
-    expect(DURATION_ENTRIES.map((e) => e.id)).toEqual(['w', 'h', 'q', 'qd', '8', '16'])
+  it('contains exactly the nine entries in notation order', () => {
+    expect(DURATION_ENTRIES.map((e) => e.id)).toEqual(
+      ['w', 'h', 'hd', 'q', 'qd', '8', '8d', '16', '16d']
+    )
     expect(DURATIONS).toBe(DURATION_ENTRIES)
   })
 
@@ -13,13 +15,16 @@ describe('duration registry', () => {
     const byId = Object.fromEntries(DURATION_ENTRIES.map((e) => [e.id, e]))
     expect(byId.w).toMatchObject({ beats: 4, vex: 'w', vexDots: 0, tone: '1n' })
     expect(byId.h).toMatchObject({ beats: 2, vex: 'h', vexDots: 0, tone: '2n' })
+    expect(byId.hd).toMatchObject({ beats: 3, vex: 'h', vexDots: 1, tone: '2n.' })
     expect(byId.q).toMatchObject({ beats: 1, vex: 'q', vexDots: 0, tone: '4n' })
     expect(byId.qd).toMatchObject({ beats: 1.5, vex: 'q', vexDots: 1, tone: '4n.' })
     expect(byId['8']).toMatchObject({ beats: 0.5, vex: '8', vexDots: 0, tone: '8n' })
+    expect(byId['8d']).toMatchObject({ beats: 0.75, vex: '8', vexDots: 1, tone: '8n.' })
     expect(byId['16']).toMatchObject({ beats: 0.25, vex: '16', vexDots: 0, tone: '16n' })
+    expect(byId['16d']).toMatchObject({ beats: 0.375, vex: '16', vexDots: 1, tone: '16n.' })
   })
 
-  it('keeps the rest palette at exactly w, h, q, 8, 16 (qd hidden)', () => {
+  it('keeps the rest palette at exactly w, h, q, 8, 16 (dotted variants hidden)', () => {
     expect(RESTS.map((r) => r.id)).toEqual(['w', 'h', 'q', '8', '16'])
     RESTS.forEach((r) => {
       expect(r.label).toBeTruthy()
@@ -27,9 +32,10 @@ describe('duration registry', () => {
     })
   })
 
-  it('maps keyboard shortcuts 1-6 (6 = dotted quarter)', () => {
+  it('maps keyboard shortcuts 1-9 (6-9 = dotted variants)', () => {
     expect(SHORTCUT_TO_DURATION).toEqual({
-      1: 'w', 2: 'h', 3: 'q', 4: '8', 5: '16', 6: 'qd',
+      1: 'w', 2: 'h', 3: 'q', 4: '8', 5: '16',
+      6: 'qd', 7: 'hd', 8: '8d', 9: '16d',
     })
   })
 
