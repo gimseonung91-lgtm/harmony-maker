@@ -21,10 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install the official Audiveris release (bundles its own Java runtime),
 # then expose the launcher on PATH. `test -x` fails the build early if the
 # package layout ever changes.
-# The empty desktop-directories folder keeps the .deb's post-install script
-# (xdg-desktop-menu) from failing in a container ("No writable system menu
-# directory found", postinst exit 3).
-RUN mkdir -p /usr/share/desktop-directories \
+# The empty xdg data folders keep the .deb's post-install script from failing
+# in a container: xdg-desktop-menu, xdg-mime and xdg-icon-resource each abort
+# with "No writable system … directory found" (postinst exit 3) otherwise.
+RUN mkdir -p /usr/share/desktop-directories /usr/share/mime/packages \
+        /usr/share/icons/hicolor /usr/share/applications \
     && curl -fsSL -o /tmp/audiveris.deb \
         "https://github.com/Audiveris/audiveris/releases/download/${AUDIVERIS_VERSION}/Audiveris-${AUDIVERIS_VERSION}-ubuntu24.04-x86_64.deb" \
     && apt-get update && apt-get install -y --no-install-recommends /tmp/audiveris.deb \
