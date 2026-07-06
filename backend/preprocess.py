@@ -23,7 +23,9 @@ def _deskew_angle(gray):
 
     angles = []
     for line in lines:
-        x1, y1, x2, y2 = line[0]
+        # ravel() tolerates both (1,4) and flat (4,) rows — the HoughLinesP
+        # output shape differs across OpenCV releases.
+        x1, y1, x2, y2 = np.ravel(line)[:4]
         angle = np.degrees(np.arctan2(y2 - y1, x2 - x1))
         if abs(angle) < 30:  # only near-horizontal lines count as stafflines
             angles.append(angle)
@@ -51,8 +53,14 @@ def preprocess_image(in_path, out_path, max_width=1500, min_width=1000):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     gray = clahe.apply(gray)
 
-    # Straighten the page so staff spacing is consistent
-    angle = _deskew_angle(gray)
+    # Straighten the page so staff spacing is consistent. Deskew is
+    # best-effort: a failure here must not abort the resolution
+    # normalization below, which is what most uploads depend on.
+    try:
+        angle = _deskew_angle(gray)
+    except Exception as exc:  # noqa: BLE001
+        print(f"deskew skipped: {exc}", flush=True)
+        angle = 0.0
     if abs(angle) > 0.3:
         h, w = gray.shape
         center = (w / 2, h / 2)
