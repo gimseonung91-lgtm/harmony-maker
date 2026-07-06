@@ -24,7 +24,7 @@ export function useVexFlow(notes, projectInfo, onLayout) {
       if (cancelled) return
       el.innerHTML = ''
 
-      const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, Beam, StaveTie, Annotation } = VF
+      const { Renderer, Stave, StaveNote, BarNote, Voice, Formatter, Accidental, Beam, StaveTie, Annotation } = VF
 
       const renderer = new Renderer(el, Renderer.Backends.SVG)
       const width = el.clientWidth || 900
@@ -76,8 +76,24 @@ export function useVexFlow(notes, projectInfo, onLayout) {
         return sn
       })
 
+      // Insert barlines wherever the accumulated duration completes a
+      // measure of the current time signature (boundaries that fall inside
+      // a note are simply skipped — no notes are split).
+      const BEATS = { w: 4, h: 2, q: 1, 8: 0.5, 16: 0.25 }
+      const [tsNum, tsDen] = (projectInfo.timeSignature ?? '4/4').split('/').map(Number)
+      const beatsPerMeasure = (tsNum || 4) * (4 / (tsDen || 4))
+      const tickables = []
+      let acc = 0
+      vexNotes.forEach((vn, i) => {
+        tickables.push(vn)
+        acc += BEATS[notes[i].duration] ?? 1
+        const rem = acc % beatsPerMeasure
+        const atBoundary = rem < 1e-6 || beatsPerMeasure - rem < 1e-6
+        if (atBoundary && i < vexNotes.length - 1) tickables.push(new BarNote())
+      })
+
       const voice = new Voice({ num_beats: 4, beat_value: 4 }).setMode(2) // SOFT
-      voice.addTickables(vexNotes)
+      voice.addTickables(tickables)
 
       // Auto-beam consecutive eighth/sixteenth notes (skips rests automatically)
       const beams = Beam.generateBeams(vexNotes)

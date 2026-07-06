@@ -18,6 +18,11 @@ export const RESTS = [
 
 export const PITCHES_IN_OCTAVE = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
 
+// Project-setting choices (shared by the header controls and Settings panel)
+export const KEY_SIGS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb']
+export const CLEFS = ['treble', 'bass', 'alto', 'tenor']
+export const TIME_SIGS = ['4/4', '3/4', '2/4', '6/8', '2/2']
+
 // Staff Y-position → pitch (for treble clef, staff top = B5, each step = half line-space)
 // We use a simplified grid: each "slot" is 10px and maps to a pitch step
 export const SLOT_HEIGHT = 10 // px per diatonic step

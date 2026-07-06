@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useHarmonyStore } from './store/useHarmonyStore'
 import { Toolbar } from './components/Toolbar/Toolbar'
 import { DropCanvas, STAFF_TOP_OFFSET } from './components/Canvas/DropCanvas'
-import { yToPitch } from './utils/pitchUtils'
+import { yToPitch, KEY_SIGS, TIME_SIGS } from './utils/pitchUtils'
 import { DerivedLines } from './components/SavedLines/DerivedLines'
 import { ImportedLines } from './components/ImportedLines/ImportedLines'
 import { TrackToggle } from './components/TrackToggle'
@@ -26,9 +26,12 @@ export default function App() {
     setIsPlaying,
     addNoteAt,
     moveNote,
+    replaceNote,
+    undo,
     notePositions,
     setSelectedDuration,
     setNoteDuration,
+    setProjectInfo,
     generateHarmony,
     clearAll,
   } = useHarmonyStore()
@@ -72,21 +75,27 @@ export default function App() {
     }
   }
 
-  // Number keys 1–5 set note length (selected note, else next-draw duration)
+  // Number keys 1–5 set note length (selected note, else next-draw duration);
+  // Ctrl/Cmd+Z undoes the last melody edit.
   useEffect(() => {
     const KEY_DURATION = { 1: 'w', 2: 'h', 3: 'q', 4: '8', 5: '16' }
     function onKeyDown(e) {
-      const dur = KEY_DURATION[e.key]
-      if (!dur) return
       const tag = e.target.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        undo()
+        return
+      }
+      const dur = KEY_DURATION[e.key]
+      if (!dur) return
       const id = useHarmonyStore.getState().selectedNoteId
       if (id) setNoteDuration(id, dur)
       else setSelectedDuration(dur)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [setNoteDuration, setSelectedDuration])
+  }, [setNoteDuration, setSelectedDuration, undo])
 
   function handlePlay() {
     const tracks = enabledTrackList()
@@ -129,9 +138,17 @@ export default function App() {
       ).length
       moveNote(data.noteId, index, pitch)
     } else {
-      // New note from the toolbar: insert at the X position (no longer append)
-      const index = notePositions.filter((p) => p.x < dropX).length
-      addNoteAt({ type: data.type, pitch: data.pitch, duration: data.duration }, index)
+      // Toolbar tile dropped ON an existing note → replace that note in place
+      // (the tile defines the new pitch/duration; delete + re-add no longer
+      // needed to fix a note). Otherwise insert at the X position.
+      const HIT_RADIUS = 14
+      const hit = notePositions.find((p) => Math.abs(p.x - dropX) <= HIT_RADIUS)
+      if (hit) {
+        replaceNote(hit.id, { type: data.type, pitch: data.pitch, duration: data.duration })
+      } else {
+        const index = notePositions.filter((p) => p.x < dropX).length
+        addNoteAt({ type: data.type, pitch: data.pitch, duration: data.duration }, index)
+      }
     }
   }
 
@@ -154,9 +171,21 @@ export default function App() {
             <span style={layout.projectTitle}>{projectInfo.title}</span>
           </div>
           <div style={layout.headerRight}>
-            <Chip label={projectInfo.keySignature} sublabel="key" />
+            <ChipSelect
+              value={projectInfo.keySignature}
+              options={KEY_SIGS}
+              onChange={(v) => setProjectInfo({ keySignature: v })}
+              sublabel="key"
+              title="Key signature"
+            />
             <Chip label={projectInfo.clef} sublabel="clef" />
-            <Chip label={projectInfo.timeSignature} sublabel="time" />
+            <ChipSelect
+              value={projectInfo.timeSignature}
+              options={TIME_SIGS}
+              onChange={(v) => setProjectInfo({ timeSignature: v })}
+              sublabel="time"
+              title="Time signature"
+            />
 
             <div style={layout.divider} />
 
@@ -290,6 +319,34 @@ function Chip({ label, sublabel }) {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 }}>{label}</span>
       <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{sublabel}</span>
+    </div>
+  )
+}
+
+// A Chip whose value is directly editable from the header.
+function ChipSelect({ value, options, onChange, sublabel, title }) {
+  return (
+    <div title={title} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          background: 'transparent',
+          border: 'none',
+          outline: 'none',
+          cursor: 'pointer',
+          textAlign: 'center',
+          appearance: 'none',
+          lineHeight: 1,
+          padding: 0,
+        }}
+      >
+        {options.map((o) => <option key={o} value={o} style={{ background: 'var(--bg-panel)' }}>{o}</option>)}
+      </select>
+      <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{sublabel} ▾</span>
     </div>
   )
 }

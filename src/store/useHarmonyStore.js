@@ -14,6 +14,11 @@ function newId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 }
 
+// Snapshot the melody for undo (Ctrl+Z), capped at 50 steps.
+function pushUndo(s) {
+  return [...s._undo.slice(-49), s.melody]
+}
+
 export const useHarmonyStore = create((set, get) => ({
   // ── Project metadata ──────────────────────────────────────────────
   projectInfo: { ...defaultProject },
@@ -46,6 +51,8 @@ export const useHarmonyStore = create((set, get) => ({
   notePositions: [],
   // Currently selected melody note (number keys change its duration)
   selectedNoteId: null,
+  // Undo history: past melody snapshots (Ctrl+Z)
+  _undo: [],
 
   // ── Project actions ───────────────────────────────────────────────
   setProjectInfo: (patch) =>
@@ -81,7 +88,7 @@ export const useHarmonyStore = create((set, get) => ({
       const at = index == null ? s.melody.length : Math.max(0, Math.min(index, s.melody.length))
       const melody = [...s.melody]
       melody.splice(at, 0, note)
-      return { melody }
+      return { melody, _undo: pushUndo(s) }
     }),
 
   addNote: (noteData) => get().addNoteAt(noteData),
@@ -96,12 +103,31 @@ export const useHarmonyStore = create((set, get) => ({
       const updated = pitch && note.type !== 'rest' ? { ...note, pitch } : note
       const at = Math.max(0, Math.min(index, melody.length))
       melody.splice(at, 0, updated)
-      return { melody }
+      return { melody, _undo: pushUndo(s) }
+    }),
+
+  // Overwrite an existing note in place (drop a toolbar tile onto it).
+  // Keeps the lyric; a rest tile turns the note into a rest and vice versa.
+  replaceNote: (id, data) =>
+    set((s) => {
+      const i = s.melody.findIndex((n) => n.id === id)
+      if (i < 0) return {}
+      const prev = s.melody[i]
+      const next = {
+        ...prev,
+        type: data.type ?? prev.type,
+        pitch: (data.type ?? prev.type) === 'rest' ? null : (data.pitch ?? prev.pitch),
+        duration: data.duration ?? prev.duration,
+      }
+      const melody = [...s.melody]
+      melody[i] = next
+      return { melody, _undo: pushUndo(s) }
     }),
 
   setNoteDuration: (id, duration) =>
     set((s) => ({
       melody: s.melody.map((n) => (n.id === id ? { ...n, duration } : n)),
+      _undo: pushUndo(s),
     })),
 
   setLyric: (id, lyric) =>
@@ -113,26 +139,61 @@ export const useHarmonyStore = create((set, get) => ({
     set((s) => ({
       melody: s.melody.filter((n) => n.id !== id),
       selectedNoteId: s.selectedNoteId === id ? null : s.selectedNoteId,
+      _undo: pushUndo(s),
     })),
 
   toggleTie: (id) =>
     set((s) => ({
       melody: s.melody.map((n) => (n.id === id ? { ...n, tie: !n.tie } : n)),
+      _undo: pushUndo(s),
     })),
 
-  clearMelody: () => set({ melody: [], selectedNoteId: null }),
+  clearMelody: () => set((s) => ({ melody: [], selectedNoteId: null, _undo: pushUndo(s) })),
 
   // Replace the whole melody at once (used by the image-import / OMR flow)
   setMelody: (notes) =>
-    set(() => ({
+    set((s) => ({
       melody: notes.map((n) => ({
         id: newId('note'),
         type: n.type ?? 'note',
         pitch: n.pitch ?? null,
         duration: n.duration ?? 'q',
         tie: n.tie ?? false,
+        lyric: n.lyric ?? '',
       })),
+      _undo: pushUndo(s),
     })),
+
+  // Undo the last melody edit (Ctrl+Z)
+  undo: () =>
+    set((s) => {
+      if (s._undo.length === 0) return {}
+      return {
+        melody: s._undo[s._undo.length - 1],
+        _undo: s._undo.slice(0, -1),
+        selectedNoteId: null,
+      }
+    }),
+
+  // Load an imported line into the melody editor so it can be edited with
+  // the full toolset (drag, replace, lyrics, harmony…).
+  editImportedLine: (id) =>
+    set((s) => {
+      const line = s.importedLines.find((l) => l.id === id)
+      if (!line) return {}
+      return {
+        melody: line.notes.map((n) => ({
+          id: newId('note'),
+          type: n.type ?? 'note',
+          pitch: n.pitch ?? null,
+          duration: n.duration ?? 'q',
+          tie: n.tie ?? false,
+          lyric: n.lyric ?? '',
+        })),
+        selectedNoteId: null,
+        _undo: pushUndo(s),
+      }
+    }),
 
   // ── Harmony generation (independent lines) ────────────────────────
   generateHarmony: (interval) =>
@@ -223,8 +284,50 @@ export const useHarmonyStore = create((set, get) => ({
     }),
 
   clearAll: () =>
-    set({ melody: [], derivedLines: [], importedLines: [], enabledTracks: { melody: true } }),
+    set((s) => ({
+      melody: [],
+      derivedLines: [],
+      importedLines: [],
+      enabledTracks: { melody: true },
+      _undo: pushUndo(s),
+    })),
 }))
+
+// ── Autosave ─────────────────────────────────────────────────────────
+// The whole project lives in browser memory, so persist it to localStorage
+// (debounced) and restore on load — a refresh no longer loses the work.
+const STORAGE_KEY = 'harmony-maker-project-v1'
+
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')
+  if (saved && typeof saved === 'object') {
+    useHarmonyStore.setState({
+      projectInfo: { ...defaultProject, ...saved.projectInfo },
+      melody: saved.melody ?? [],
+      derivedLines: saved.derivedLines ?? [],
+      importedLines: saved.importedLines ?? [],
+      enabledTracks: saved.enabledTracks ?? { melody: true },
+      bpm: saved.bpm ?? 90,
+    })
+  }
+} catch { /* corrupted or unavailable storage — start fresh */ }
+
+let saveTimer = null
+useHarmonyStore.subscribe((s) => {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        projectInfo: s.projectInfo,
+        melody: s.melody,
+        derivedLines: s.derivedLines,
+        importedLines: s.importedLines,
+        enabledTracks: s.enabledTracks,
+        bpm: s.bpm,
+      }))
+    } catch { /* storage full/blocked — autosave is best-effort */ }
+  }, 500)
+})
 
 // Dev-only: expose store for debugging in the browser console
 if (import.meta.env.DEV) {

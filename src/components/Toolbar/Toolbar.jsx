@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { DraggableNote } from './DraggableNote'
-import { DURATIONS, RESTS, PITCHES_IN_OCTAVE } from '../../utils/pitchUtils'
+import { DURATIONS, RESTS, PITCHES_IN_OCTAVE, KEY_SIGS, CLEFS, TIME_SIGS } from '../../utils/pitchUtils'
 import { analyzeScoreImage } from '../../utils/omr'
 import { parseMusicXML } from '../../utils/musicxml'
 
@@ -24,10 +24,6 @@ function buildNoteTiles() {
 }
 
 const NOTE_TILES = buildNoteTiles()
-
-const KEY_SIGS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb']
-const CLEFS = ['treble', 'bass', 'alto', 'tenor']
-const TIME_SIGS = ['4/4', '3/4', '2/4', '6/8', '2/2']
 
 export function Toolbar() {
   const { toolbarOpen, activeCategory, setActiveCategory, projectInfo, setProjectInfo } =
@@ -121,6 +117,7 @@ function NotesPanel() {
 
 function ImportPanel() {
   const setImportedLines = useHarmonyStore((s) => s.setImportedLines)
+  const setProjectInfo = useHarmonyStore((s) => s.setProjectInfo)
   const xmlInputRef = useRef(null)
   const imgInputRef = useRef(null)
   const [status, setStatus] = useState('idle') // idle | loading | error
@@ -137,8 +134,9 @@ function ImportPanel() {
         )
       }
       const text = await file.text()
-      const lines = parseMusicXML(text)
+      const { lines, meta } = parseMusicXML(text)
       setImportedLines(lines)
+      if (meta.keySignature || meta.timeSignature) setProjectInfo(meta)
       const total = lines.reduce((a, l) => a + l.notes.length, 0)
       setStatus('idle')
       setMessage(`✓ Imported ${lines.length} lines (${total} notes) from “${file.name}”`)
@@ -159,8 +157,9 @@ function ImportPanel() {
       'Please keep this tab open.'
     )
     try {
-      const { lines, usedBackend } = await analyzeScoreImage(file)
+      const { lines, meta, usedBackend } = await analyzeScoreImage(file)
       setImportedLines(lines)
+      if (meta.keySignature || meta.timeSignature) setProjectInfo(meta)
       const total = lines.reduce((a, l) => a + l.notes.length, 0)
       setStatus('idle')
       setMessage(

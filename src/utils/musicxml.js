@@ -64,11 +64,28 @@ function parseMeasureNotes(measure, measureIdx) {
 
 const SYSTEM_BREAK = 'print[new-system="yes"], print[new-page="yes"]'
 
+// MusicXML <fifths> (circle of fifths position) → key-signature name
+const FIFTHS_TO_KEY = {
+  0: 'C', 1: 'G', 2: 'D', 3: 'A', 4: 'E', 5: 'B', 6: 'Gb',
+  '-1': 'F', '-2': 'Bb', '-3': 'Eb', '-4': 'Ab', '-5': 'Db', '-6': 'Gb',
+}
+
+// Read the score's key & time signature from the first <attributes> block.
+function parseMeta(part) {
+  const meta = {}
+  const fifths = part.querySelector('key > fifths')?.textContent?.trim()
+  if (fifths != null && FIFTHS_TO_KEY[fifths]) meta.keySignature = FIFTHS_TO_KEY[fifths]
+  const beats = part.querySelector('time > beats')?.textContent?.trim()
+  const beatType = part.querySelector('time > beat-type')?.textContent?.trim()
+  if (beats && beatType) meta.timeSignature = `${beats}/${beatType}`
+  return meta
+}
+
 /**
- * Parse a MusicXML document into lines (staff systems).
+ * Parse a MusicXML document into lines (staff systems) plus score metadata.
  *
  * @param {string} xmlText
- * @returns {Array<{ lineId: string, notes: Array }>}
+ * @returns {{ lines: Array<{ lineId: string, notes: Array }>, meta: { keySignature?: string, timeSignature?: string } }}
  */
 export function parseMusicXML(xmlText) {
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml')
@@ -108,5 +125,8 @@ export function parseMusicXML(xmlText) {
     throw new Error('No notes found in the MusicXML document.')
   }
 
-  return lines.map((notes, i) => ({ lineId: `line_${i + 1}`, notes }))
+  return {
+    lines: lines.map((notes, i) => ({ lineId: `line_${i + 1}`, notes })),
+    meta: parseMeta(part),
+  }
 }

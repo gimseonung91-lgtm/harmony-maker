@@ -31,7 +31,7 @@ const SAMPLE_LINES = [
  * Analyze a sheet-music image and return its lines (staff systems).
  *
  * @param {File} file – the uploaded image
- * @returns {Promise<{ lines: Array<{lineId:string, notes:Array}>, usedBackend: boolean }>}
+ * @returns {Promise<{ lines: Array<{lineId:string, notes:Array}>, meta: object, usedBackend: boolean }>}
  */
 export async function analyzeScoreImage(file) {
   if (BACKEND_URL) {
@@ -50,10 +50,11 @@ export async function analyzeScoreImage(file) {
       throw new Error(`${String(detail).slice(0, 300)} (OMR backend ${res.status})`)
     }
     const xml = await res.text()
-    return { lines: parseMusicXML(xml), usedBackend: true }
+    const { lines, meta } = parseMusicXML(xml)
+    return { lines, meta, usedBackend: true }
   }
 
   // No backend configured → sample line so the pipeline is still exercisable.
   await new Promise((r) => setTimeout(r, 400))
-  return { lines: SAMPLE_LINES, usedBackend: false }
+  return { lines: SAMPLE_LINES, meta: {}, usedBackend: false }
 }

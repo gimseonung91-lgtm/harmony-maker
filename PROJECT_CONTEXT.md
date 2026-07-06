@@ -237,6 +237,14 @@ npm run dev
 - (기각) Klangio 등 상용 이미지 OMR API — 이미지당 단가 비공개로 예산 리스크. homr(oemer 개선판) — 정확도는 낫지만 딥러닝이라 GPU 비용 필요.
 - ⚠️ 과거 교훈(oemer 시절): Dockerfile에 빌드 시 모델 warm-up을 넣으면 HF 빌더 리소스 초과로 BUILD_ERROR. Audiveris는 모델 다운로드가 없어 해당 없음.
 
+### ✅ 편집성 밸류업 (2026-07-06)
+- **드롭으로 교체**: 툴바 타일을 기존 음표 위(X±14px)에 드롭하면 `replaceNote`로 그 자리 수정(가사 유지, 쉼표↔음표 전환 가능).
+- **임포트 라인 편집**: ImportedLines 카드의 ✎ Edit → `editImportedLine`이 해당 라인을 멜로디 편집기로 로드.
+- **박자/조성 헤더 편집**: 헤더 칩이 select로 교체(`ChipSelect`), MusicXML/OMR 임포트 시 `<time>`/`<fifths>` 자동 감지·적용(`parseMusicXML`이 `{lines, meta}` 반환으로 변경됨 — 호출부 주의).
+- **마디선**: useVexFlow가 timeSignature 기준 누적 박자로 `BarNote` 삽입(마디 중간에 걸치면 생략).
+- **자동 저장**: localStorage `harmony-maker-project-v1`, 500ms 디바운스, 로드 시 복원.
+- **실행 취소**: 멜로디 편집 액션들이 `_undo` 스택(최대 50)에 스냅샷 저장, Ctrl/Cmd+Z → `undo()` (가사 입력은 미포함).
+
 ### 🟡 개선 여지 (선택)
 - GitHub Actions의 Node 20 deprecation 경고 → 액션 최신 버전으로 갱신
 - 4마디 한 줄이 오선지에 다소 빽빽 → 마디선/줄바꿈 렌더 개선(현재 SOFT voice, 마디선 없음)

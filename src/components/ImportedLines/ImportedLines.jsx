@@ -3,7 +3,7 @@ import { ScoreCanvas } from '../Canvas/ScoreCanvas'
 import { TrackToggle } from '../TrackToggle'
 
 export function ImportedLines() {
-  const { importedLines, projectInfo, enabledTracks, toggleTrack, removeLine, moveLine, splitLine } =
+  const { importedLines, projectInfo, enabledTracks, toggleTrack, removeLine, moveLine, splitLine, editImportedLine } =
     useHarmonyStore()
 
   if (importedLines.length === 0) return null
@@ -23,6 +23,13 @@ export function ImportedLines() {
               <span style={styles.meta}>{line.notes.length} notes · {measureCount} measures</span>
 
               <div style={styles.actions}>
+                <button
+                  onClick={() => editImportedLine(line.id)}
+                  style={{ ...btnStyle(false), color: 'var(--accent)' }}
+                  title="Load this line into the melody editor (replaces the current melody; Ctrl+Z restores it)"
+                >
+                  ✎ Edit
+                </button>
                 <button
                   onClick={() => moveLine(line.id, 'up')}
                   disabled={i === 0}
