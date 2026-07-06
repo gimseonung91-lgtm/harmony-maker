@@ -231,7 +231,9 @@ npm run dev
   - `backend/Dockerfile` — ubuntu:24.04 + 공식 Audiveris `.deb`(자바 런타임 내장) + tesseract-ocr(-eng). oemer/onnxruntime 미설치(이미지 대폭 경량화, 모델 다운로드 없어 콜드스타트 빠름). 파이썬 deps는 `requirements-server.txt`.
   - `backend/requirements.txt` — 로컬(oemer 폴백)용으로 유지.
   - `preprocess.py` — `max_width` 파라미터화: oemer는 1500px 캡, Audiveris는 다운스케일 없음(고해상도 선호).
-- **비용:** Audiveris는 CPU 친화적(GPU 불필요) → 무료 CPU Basic으로도 페이지당 수십 초 예상. 필요 시 CPU Upgrade($0.03/시간)만 고려.
+- **비용:** Audiveris는 CPU 친화적(GPU 불필요). 현재 Space는 **CPU Upgrade**($0.03/시간) 하드웨어로 운용 중.
+- **실측 검증 (2026-07-03, CPU Upgrade):** 깨끗한 인쇄 악보 PNG → **27초, 155음표**; 폰 카메라 사진(JPG) → **12초, 329음표**. 반환 MusicXML은 score-partwise + `new-system` 마커 포함(프론트 파서 호환 확인). oemer 시절 600초+ 타임아웃 → 완전 해소.
+- ⚠️ 배포 교훈: Audiveris `.deb`의 postinst가 xdg 도구(xdg-desktop-menu/xdg-mime 등)를 실행하므로, 컨테이너에서는 `/usr/share/desktop-directories`, `/usr/share/mime/packages`, `/usr/share/icons/hicolor`, `/usr/share/applications`를 **미리 만들어야** dpkg configure가 성공한다(현재 Dockerfile에 반영됨).
 - (기각) Klangio 등 상용 이미지 OMR API — 이미지당 단가 비공개로 예산 리스크. homr(oemer 개선판) — 정확도는 낫지만 딥러닝이라 GPU 비용 필요.
 - ⚠️ 과거 교훈(oemer 시절): Dockerfile에 빌드 시 모델 warm-up을 넣으면 HF 빌더 리소스 초과로 BUILD_ERROR. Audiveris는 모델 다운로드가 없어 해당 없음.
 
