@@ -68,6 +68,61 @@ describe('parseMusicXML', () => {
     expect(lines[0].notes.map((n) => n.duration)).toEqual(['q', '16', 'w'])
   })
 
+  it('keeps only staff 1 (vocal) from a combined piano-vocal part', () => {
+    const staffNote = (step, staff) => `
+      <note><pitch><step>${step}</step><octave>4</octave></pitch>
+      <type>quarter</type><staff>${staff}</staff></note>`
+    const xml = wrap(`
+      <measure number="1">
+        <attributes><staves>3</staves></attributes>
+        ${staffNote('C', 1)}${staffNote('D', 1)}
+        ${staffNote('E', 2)}${staffNote('F', 2)}${staffNote('G', 3)}
+      </measure>`)
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.pitch)).toEqual(['C4', 'D4'])
+  })
+
+  it('keeps only the first voice when a staff carries several voices', () => {
+    const voiced = (step, voice) => `
+      <note><pitch><step>${step}</step><octave>4</octave></pitch>
+      <type>quarter</type><voice>${voice}</voice></note>`
+    const xml = wrap(`<measure number="1">
+      ${voiced('C', 1)}${voiced('D', 1)}${voiced('E', 2)}${voiced('F', 2)}
+    </measure>`)
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.pitch)).toEqual(['C4', 'D4'])
+  })
+
+  it('prefers the part whose name identifies the vocal line', () => {
+    const xml = `<?xml version="1.0"?>
+<score-partwise>
+  <part-list>
+    <score-part id="P1"><part-name>Piano</part-name></score-part>
+    <score-part id="P2"><part-name>Voice</part-name></score-part>
+  </part-list>
+  <part id="P1"><measure number="1">${NOTE('C', 3, 'quarter')}</measure></part>
+  <part id="P2"><measure number="1">${NOTE('A', 4, 'quarter')}</measure></part>
+</score-partwise>`
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.pitch)).toEqual(['A4'])
+  })
+
+  it('falls back to the first single-staff part when names are unhelpful', () => {
+    const xml = `<?xml version="1.0"?>
+<score-partwise>
+  <part-list>
+    <score-part id="P1"><part-name>Part 1</part-name></score-part>
+    <score-part id="P2"><part-name>Part 2</part-name></score-part>
+  </part-list>
+  <part id="P1"><measure number="1">
+    <attributes><staves>2</staves></attributes>${NOTE('C', 3, 'quarter')}
+  </measure></part>
+  <part id="P2"><measure number="1">${NOTE('B', 4, 'quarter')}</measure></part>
+</score-partwise>`
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.pitch)).toEqual(['B4'])
+  })
+
   it('throws on unparseable XML, missing part, and empty scores', () => {
     expect(() => parseMusicXML('not xml <<<')).toThrow(/올바르지 않은 MusicXML/)
     expect(() => parseMusicXML('<?xml version="1.0"?><score-partwise/>')).toThrow(/<part>를 찾을 수 없습니다/)

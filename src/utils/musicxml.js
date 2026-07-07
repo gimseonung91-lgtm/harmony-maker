@@ -38,10 +38,22 @@ function alterToAccidental(alter) {
 }
 
 // Parse the notes of a single <measure>, tagging each with the measure index.
-function parseMeasureNotes(measure, measureIdx) {
+// Only the top staff and the first voice are kept: piano-vocal scores put the
+// vocal line on staff 1 and the piano grand staff on staves 2-3, and a second
+// voice in the same staff would corrupt the sequential rhythm timeline.
+function parseMeasureNotes(measure, measureIdx, voiceState) {
   const notes = []
   measure.querySelectorAll('note').forEach((noteEl) => {
     if (noteEl.querySelector('chord')) return // keep the line monophonic
+
+    const staff = noteEl.querySelector('staff')?.textContent?.trim()
+    if (staff && staff !== '1') return // drop piano/accompaniment staves
+
+    const voice = noteEl.querySelector('voice')?.textContent?.trim()
+    if (voice) {
+      voiceState.first ??= voice
+      if (voice !== voiceState.first) return // keep the melody voice only
+    }
 
     const duration = mapType(
       noteEl.querySelector('type')?.textContent?.trim(),
@@ -69,6 +81,31 @@ function parseMeasureNotes(measure, measureIdx) {
 }
 
 const SYSTEM_BREAK = 'print[new-system="yes"], print[new-page="yes"]'
+
+// Part names that clearly identify the vocal line
+const VOCAL_NAME = /voc|voice|sing|lead|melod|보컬|노래|멜로디|목소리/i
+
+// Choose the part that carries the vocal line. Piano-vocal scores keep the
+// voice on top and the piano below (as a 2-staff part), so:
+// 1. a part whose name says it is vocal wins,
+// 2. otherwise the first single-staff part (piano declares <staves>2</staves>),
+// 3. otherwise the first part.
+function pickVocalPart(doc) {
+  const parts = Array.from(doc.querySelectorAll('part'))
+  if (parts.length <= 1) return parts[0] ?? null
+
+  const namedVocalIds = Array.from(doc.querySelectorAll('score-part'))
+    .filter((sp) => VOCAL_NAME.test(sp.querySelector('part-name')?.textContent ?? ''))
+    .map((sp) => sp.getAttribute('id'))
+  const named = parts.find((p) => namedVocalIds.includes(p.getAttribute('id')))
+  if (named) return named
+
+  const singleStaff = parts.find((p) => {
+    const staves = parseInt(p.querySelector('attributes > staves')?.textContent ?? '1', 10)
+    return staves <= 1
+  })
+  return singleStaff ?? parts[0]
+}
 
 // MusicXML <fifths> (circle of fifths position) → key-signature name
 const FIFTHS_TO_KEY = {
@@ -99,7 +136,7 @@ export function parseMusicXML(xmlText) {
     throw new Error('올바르지 않은 MusicXML: 문서를 해석할 수 없습니다.')
   }
 
-  const part = doc.querySelector('part')
+  const part = pickVocalPart(doc)
   if (!part) throw new Error('MusicXML 문서에서 <part>를 찾을 수 없습니다.')
 
   const measures = Array.from(part.querySelectorAll('measure'))
@@ -108,6 +145,7 @@ export function parseMusicXML(xmlText) {
   const lines = []
   let current = []
   let measuresInLine = 0
+  const voiceState = { first: null } // first voice id seen = the melody voice
 
   const flush = () => {
     if (current.length) lines.push(current)
@@ -122,7 +160,7 @@ export function parseMusicXML(xmlText) {
 
     if (breakHere && current.length) flush()
 
-    current.push(...parseMeasureNotes(measure, measureIdx))
+    current.push(...parseMeasureNotes(measure, measureIdx, voiceState))
     measuresInLine += 1
   })
   flush()

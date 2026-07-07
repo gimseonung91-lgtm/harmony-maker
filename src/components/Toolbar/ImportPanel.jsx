@@ -68,7 +68,8 @@ export function ImportPanel() {
       <SectionLabel>MusicXML 가져오기</SectionLabel>
       <p className="toolbar-hint">
         MuseScore·oemer·music21 등에서 내보낸 <strong>.musicxml</strong> 파일을
-        업로드하세요. 시스템(단) 단위로 나뉘어 여러 라인으로 들어옵니다.
+        업로드하세요. 시스템(단) 단위로 나뉘어 여러 라인으로 들어오며,
+        보컬+피아노 악보에서는 <strong>맨 위 보컬 파트만</strong> 가져옵니다.
       </p>
 
       <input
@@ -90,8 +91,8 @@ export function ImportPanel() {
       <p className="toolbar-hint">
         <strong>인쇄된</strong> 악보의 <strong>고해상도</strong> 사진/스캔을
         업로드하세요 (300 DPI 스캔 또는 원본 크기 사진 — 웹 미리보기처럼 작은
-        이미지는 실패합니다). 평평하게 정면에서 찍은 전체 페이지가 가장 잘 되고,
-        손글씨 악보는 대부분 실패합니다.
+        이미지는 실패합니다). 보컬+피아노 악보는 <strong>보컬 라인만</strong>{' '}
+        추출됩니다. 손글씨 악보는 대부분 실패합니다.
       </p>
       <input
         ref={imgInputRef}
