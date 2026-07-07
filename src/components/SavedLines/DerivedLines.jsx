@@ -4,8 +4,8 @@ import { ScoreCanvas } from '../Canvas/ScoreCanvas'
 import { TrackToggle } from '../TrackToggle'
 
 const LABELS = {
-  '3rd_harmony': '3rd Harmony',
-  '5th_harmony': '5th Harmony',
+  '3rd_harmony': '3도 화음',
+  '5th_harmony': '5도 화음',
 }
 
 export function DerivedLines() {
@@ -30,12 +30,12 @@ export function DerivedLines() {
               onToggle={() => toggleTrack(line.id)}
             />
             <span style={styles.label}>{LABELS[line.type] ?? line.type}</span>
-            <span style={styles.keySig}>{projectInfo.keySignature} major · auto-generated</span>
+            <span style={styles.keySig}>{projectInfo.keySignature} 장조 · 자동 생성</span>
             <button
               onClick={() => removeDerivedLine(line.id)}
               style={styles.deleteBtn}
-              title="Remove this harmony line"
-              aria-label={`Remove the ${LABELS[line.type] ?? line.type} line`}
+              title="이 화음 라인을 삭제합니다"
+              aria-label={`${LABELS[line.type] ?? line.type} 라인 삭제`}
             >
               ✕
             </button>

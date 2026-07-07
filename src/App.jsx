@@ -45,7 +45,7 @@ export default function App() {
           <div style={ghost}>
             <span style={{ fontSize: 18 }}>{activeItem.type === 'rest' ? '𝄽' : '♩'}</span>
             <span style={{ fontSize: 11, fontWeight: 600 }}>
-              {activeItem.type === 'rest' ? `${activeItem.duration} rest` : activeItem.pitch}
+              {activeItem.type === 'rest' ? '쉼표' : activeItem.pitch}
             </span>
           </div>
         )}

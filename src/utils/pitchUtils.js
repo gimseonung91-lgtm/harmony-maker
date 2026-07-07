@@ -8,6 +8,14 @@ export const KEY_SIGS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'D
 export const CLEFS = ['treble', 'bass', 'alto', 'tenor']
 export const TIME_SIGS = ['4/4', '3/4', '2/4', '6/8', '2/2']
 
+// Display names for clefs (values stay as VexFlow codes)
+export const CLEF_LABELS = {
+  treble: '높은음자리표',
+  bass: '낮은음자리표',
+  alto: '알토',
+  tenor: '테너',
+}
+
 // Staff Y-position → pitch (for treble clef, staff top = B5, each step = half line-space)
 // We use a simplified grid: each "slot" is 10px and maps to a pitch step
 export const SLOT_HEIGHT = 10 // px per diatonic step

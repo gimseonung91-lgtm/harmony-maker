@@ -29,33 +29,35 @@ describe('Toolbar', () => {
     expect(container.querySelector('aside')).toBeNull()
   })
 
-  it('switches between Notes / Import / Settings tabs', async () => {
+  it('switches between the 음표 / 가져오기 / 설정 tabs', async () => {
     const user = userEvent.setup()
     renderToolbar()
-    expect(screen.getByText('Duration')).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: 'Import' }))
-    expect(screen.getByText(/Upload MusicXML/)).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: 'Settings' }))
-    expect(screen.getByText('Key Signature')).toBeInTheDocument()
+    expect(screen.getByText('음길이')).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: '가져오기' }))
+    expect(screen.getByText(/MusicXML 업로드/)).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: '설정' }))
+    expect(screen.getByText('조성')).toBeInTheDocument()
   })
 
   it('selects a duration for click-to-add', async () => {
     const user = userEvent.setup()
     renderToolbar()
-    await user.click(screen.getByTitle('Half'))
+    await user.click(screen.getByTitle('2분음표'))
     expect(g().selectedDuration).toBe('h')
   })
 
   it('shows the five-entry rest palette (w, h, q, 8, 16)', () => {
     renderToolbar()
-    const rests = screen.getAllByText('rest')
-    expect(rests).toHaveLength(5)
+    for (const title of ['온쉼표', '2분쉼표', '4분쉼표', '8분쉼표', '16분쉼표']) {
+      expect(screen.getByTitle(title)).toBeInTheDocument()
+    }
+    expect(screen.getAllByTitle(/쉼표$/)).toHaveLength(5)
   })
 
   it('updates project settings', async () => {
     const user = userEvent.setup()
     renderToolbar()
-    await user.click(screen.getByRole('tab', { name: 'Settings' }))
+    await user.click(screen.getByRole('tab', { name: '설정' }))
     await user.selectOptions(screen.getByDisplayValue('C'), 'F')
     expect(g().projectInfo.keySignature).toBe('F')
     await user.selectOptions(screen.getByDisplayValue('4/4'), '6/8')
@@ -65,11 +67,11 @@ describe('Toolbar', () => {
   it('rejects compressed .mxl uploads with the existing message', async () => {
     const user = userEvent.setup()
     const { container } = renderToolbar()
-    await user.click(screen.getByRole('tab', { name: 'Import' }))
+    await user.click(screen.getByRole('tab', { name: '가져오기' }))
     const input = container.querySelector('input[accept*="musicxml"]')
     const file = new File(['PK-zip-bytes'], 'score.mxl', { type: 'application/octet-stream' })
     fireEvent.change(input, { target: { files: [file] } })
-    expect(await screen.findByText(/Compressed \.mxl is not supported/)).toBeInTheDocument()
+    expect(await screen.findByText(/압축된 \.mxl 형식은 지원하지 않습니다/)).toBeInTheDocument()
     expect(g().importedLines).toEqual([])
   })
 })

@@ -19,7 +19,7 @@ export function ImportPanel() {
     try {
       if (/\.mxl$/i.test(file.name)) {
         throw new Error(
-          'Compressed .mxl is not supported. Re-export as uncompressed MusicXML (.musicxml).'
+          '압축된 .mxl 형식은 지원하지 않습니다. 비압축 MusicXML(.musicxml)로 다시 내보내 주세요.'
         )
       }
       const text = await file.text()
@@ -28,10 +28,10 @@ export function ImportPanel() {
       if (meta.keySignature || meta.timeSignature) setProjectInfo(meta)
       const total = lines.reduce((a, l) => a + l.notes.length, 0)
       setStatus('idle')
-      setMessage(`✓ Imported ${lines.length} lines (${total} notes) from “${file.name}”`)
+      setMessage(`✓ “${file.name}”에서 ${lines.length}개 라인(음표 ${total}개)을 가져왔습니다`)
     } catch (err) {
       setStatus('error')
-      setMessage(err.message || 'Could not parse the MusicXML file.')
+      setMessage(err.message || 'MusicXML 파일을 해석할 수 없습니다.')
     } finally {
       e.target.value = ''
     }
@@ -42,8 +42,7 @@ export function ImportPanel() {
     if (!file) return
     setStatus('loading')
     setMessage(
-      '⏳ Analyzing image… this usually takes under 2 minutes. ' +
-      'Please keep this tab open.'
+      '⏳ 이미지 분석 중… 보통 2분 이내에 끝납니다. 이 탭을 닫지 말고 기다려 주세요.'
     )
     try {
       const { lines, meta, usedBackend } = await analyzeScoreImage(file)
@@ -53,12 +52,12 @@ export function ImportPanel() {
       setStatus('idle')
       setMessage(
         usedBackend
-          ? `✓ Recognized ${lines.length} lines (${total} notes) from “${file.name}”`
-          : `Loaded a sample line (image OMR backend not configured).`
+          ? `✓ “${file.name}”에서 ${lines.length}개 라인(음표 ${total}개)을 인식했습니다`
+          : 'OMR 백엔드가 설정되지 않아 샘플 라인을 불러왔습니다.'
       )
     } catch (err) {
       setStatus('error')
-      setMessage(err.message || 'Could not analyze the image.')
+      setMessage(err.message || '이미지를 분석할 수 없습니다.')
     } finally {
       e.target.value = ''
     }
@@ -66,10 +65,10 @@ export function ImportPanel() {
 
   return (
     <div>
-      <SectionLabel>Import MusicXML</SectionLabel>
+      <SectionLabel>MusicXML 가져오기</SectionLabel>
       <p className="toolbar-hint">
-        Upload a <strong>.musicxml</strong> file from oemer, MuseScore, music21 or
-        any notation tool. It is split into separate lines (one per system).
+        MuseScore·oemer·music21 등에서 내보낸 <strong>.musicxml</strong> 파일을
+        업로드하세요. 시스템(단) 단위로 나뉘어 여러 라인으로 들어옵니다.
       </p>
 
       <input
@@ -84,15 +83,15 @@ export function ImportPanel() {
         disabled={status === 'loading'}
         className="toolbar-upload-btn"
       >
-        {status === 'loading' ? 'Parsing…' : '↑  Upload MusicXML'}
+        {status === 'loading' ? '분석 중…' : '↑  MusicXML 업로드'}
       </button>
 
-      <SectionLabel>Sheet-music image (OMR)</SectionLabel>
+      <SectionLabel>악보 이미지 (OMR)</SectionLabel>
       <p className="toolbar-hint">
-        Upload a photo or scan of a <strong>printed</strong> score at{' '}
-        <strong>high resolution</strong> (a 300 DPI scan or full-size camera
-        photo — small web previews fail). Clear, flat, straight-on full pages
-        work best; handwritten scores usually fail.
+        <strong>인쇄된</strong> 악보의 <strong>고해상도</strong> 사진/스캔을
+        업로드하세요 (300 DPI 스캔 또는 원본 크기 사진 — 웹 미리보기처럼 작은
+        이미지는 실패합니다). 평평하게 정면에서 찍은 전체 페이지가 가장 잘 되고,
+        손글씨 악보는 대부분 실패합니다.
       </p>
       <input
         ref={imgInputRef}
@@ -106,7 +105,7 @@ export function ImportPanel() {
         disabled={status === 'loading'}
         className="toolbar-upload-btn toolbar-upload-btn--image"
       >
-        ↑  Upload score image
+        ↑  악보 이미지 업로드
       </button>
 
       {message && (

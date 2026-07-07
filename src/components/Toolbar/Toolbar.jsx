@@ -7,9 +7,9 @@ import { SettingsPanel } from './SettingsPanel'
 import './toolbar.css'
 
 const CATEGORIES = [
-  { id: 'notes', label: 'Notes' },
-  { id: 'import', label: 'Import' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'notes', label: '음표' },
+  { id: 'import', label: '가져오기' },
+  { id: 'settings', label: '설정' },
 ]
 
 export function Toolbar() {
@@ -28,9 +28,9 @@ export function Toolbar() {
   }
 
   return (
-    <aside id="tool-surface" className="toolbar-aside" aria-label="Tools">
-      <button className="toolbar-close" onClick={closeAndRestoreFocus} aria-label="Close tools">
-        ✕ Close tools
+    <aside id="tool-surface" className="toolbar-aside" aria-label="도구함">
+      <button className="toolbar-close" onClick={closeAndRestoreFocus} aria-label="도구함 닫기">
+        ✕ 도구함 닫기
       </button>
       <div className="toolbar-tabs" role="tablist">
         {CATEGORIES.map((cat) => (

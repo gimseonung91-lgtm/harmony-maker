@@ -30,7 +30,7 @@ export function DraggableNote({ pitch, duration, label, symbol, kind = 'note' })
   return (
     <div ref={setNodeRef} style={style} {...listeners} {...attributes} title={isRest ? label : `${pitch} — ${label}`}>
       <span style={{ fontSize: 20, lineHeight: 1, color: 'var(--text-primary)' }}>{symbol}</span>
-      <span style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 500 }}>{isRest ? 'rest' : pitch}</span>
+      <span style={{ fontSize: 10, color: 'var(--text-secondary)', fontWeight: 500 }}>{isRest ? '쉼표' : pitch}</span>
     </div>
   )
 }

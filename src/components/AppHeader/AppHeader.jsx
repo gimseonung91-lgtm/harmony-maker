@@ -3,7 +3,7 @@
 // because of unrelated edits like typing lyrics.
 import { memo } from 'react'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
-import { KEY_SIGS, TIME_SIGS } from '../../utils/pitchUtils'
+import { KEY_SIGS, TIME_SIGS, CLEF_LABELS } from '../../utils/pitchUtils'
 import './AppHeader.css'
 
 function Chip({ label, sublabel }) {
@@ -72,36 +72,36 @@ export const AppHeader = memo(function AppHeader({
             value={projectInfo.keySignature}
             options={KEY_SIGS}
             onChange={(v) => setProjectInfo({ keySignature: v })}
-            sublabel="key"
-            title="Key signature"
+            sublabel="조성"
+            title="조성"
           />
-          <Chip label={projectInfo.clef} sublabel="clef" />
+          <Chip label={CLEF_LABELS[projectInfo.clef] ?? projectInfo.clef} sublabel="음자리표" />
           <ChipSelect
             value={projectInfo.timeSignature}
             options={TIME_SIGS}
             onChange={(v) => setProjectInfo({ timeSignature: v })}
-            sublabel="time"
-            title="Time signature"
+            sublabel="박자"
+            title="박자"
           />
 
           <div className="header-divider" />
 
           {isPlaying ? (
-            <HeaderBtn onClick={onStop} accent title="Stop playback">
-              ■ Stop
+            <HeaderBtn onClick={onStop} accent title="재생 정지">
+              ■ 정지
             </HeaderBtn>
           ) : (
-            <HeaderBtn onClick={onPlay} disabled={!hasContent} accent title="Play enabled tracks">
-              ▶ Play
+            <HeaderBtn onClick={onPlay} disabled={!hasContent} accent title="켜져 있는 트랙 재생">
+              ▶ 재생
             </HeaderBtn>
           )}
-          <div className="bpm-wrap" title="Tempo (BPM)">
+          <div className="bpm-wrap" title="템포 (BPM)">
             <input
               type="number"
               min={40}
               max={240}
               value={bpm}
-              aria-label="Tempo in BPM"
+              aria-label="템포 (BPM)"
               onChange={(e) => setBpm(Number(e.target.value) || 90)}
               className="bpm-input"
             />
@@ -112,22 +112,22 @@ export const AppHeader = memo(function AppHeader({
         {/* Secondary group: exports + score commands */}
         <div className="header-group">
           {isRendering ? (
-            <HeaderBtn disabled title="Rendering audio…">
-              ⏳ Rendering…
+            <HeaderBtn disabled title="음원 렌더링 중…">
+              ⏳ 렌더링 중…
             </HeaderBtn>
           ) : (
             <>
               <HeaderBtn
                 onClick={() => onDownload('wav')}
                 disabled={!hasContent}
-                title="Download enabled tracks as WAV"
+                title="켜져 있는 트랙을 WAV로 다운로드"
               >
                 ⤓ WAV
               </HeaderBtn>
               <HeaderBtn
                 onClick={() => onDownload('webm')}
                 disabled={!hasContent}
-                title="Download enabled tracks as WebM"
+                title="켜져 있는 트랙을 WebM으로 다운로드"
               >
                 ⤓ WebM
               </HeaderBtn>
@@ -136,31 +136,31 @@ export const AppHeader = memo(function AppHeader({
 
           <div className="header-divider" />
 
-          <HeaderBtn onClick={clearAll} title="Clear melody and harmony lines">
-            Clear
+          <HeaderBtn onClick={clearAll} title="멜로디와 화음 라인을 모두 지웁니다">
+            비우기
           </HeaderBtn>
           <HeaderBtn
             onClick={() => generateHarmony('3rd')}
             disabled={!hasMelody}
             accent
-            title="Generate an independent 3rd-harmony staff below the melody"
+            title="멜로디 아래에 독립된 3도 화음 보표를 생성합니다"
           >
-            + 3rd Harmony
+            + 3도 화음
           </HeaderBtn>
           <HeaderBtn
             onClick={() => generateHarmony('5th')}
             disabled={!hasMelody}
             accent
-            title="Generate an independent 5th-harmony staff below the melody"
+            title="멜로디 아래에 독립된 5도 화음 보표를 생성합니다"
           >
-            + 5th Harmony
+            + 5도 화음
           </HeaderBtn>
           <HeaderBtn
             onClick={onExport}
             disabled={!hasMelody}
-            title="Export the melody and all harmony lines as PDF"
+            title="멜로디와 모든 화음 라인을 PDF로 내보냅니다"
           >
-            Export PDF
+            PDF 내보내기
           </HeaderBtn>
 
           <div className="header-divider" />
@@ -171,8 +171,8 @@ export const AppHeader = memo(function AppHeader({
             className="header-icon-btn"
             aria-expanded={toolbarOpen}
             aria-controls="tool-surface"
-            title={toolbarOpen ? 'Hide toolbar' : 'Show toolbar'}
-            aria-label={toolbarOpen ? 'Hide toolbar' : 'Show toolbar'}
+            title={toolbarOpen ? '도구함 숨기기' : '도구함 열기'}
+            aria-label={toolbarOpen ? '도구함 숨기기' : '도구함 열기'}
           >
             {toolbarOpen ? '⟩' : '⟨'}
           </button>

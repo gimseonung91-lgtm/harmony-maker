@@ -158,24 +158,24 @@ async def omr(file: UploadFile = File(...)):
             # rather than a raw traceback (full output is logged above).
             if "interline value" in full or "resolution is too low" in full:
                 detail = (
-                    "The image resolution is too low — the staff lines are only "
-                    "a few pixels apart. Please upload a larger scan or photo "
-                    "(aim for a page at least ~2000px wide, e.g. a 300 DPI scan "
-                    "or a full-resolution camera picture, not a web preview)."
+                    "이미지 해상도가 너무 낮습니다 — 오선 줄 간격이 몇 픽셀밖에 "
+                    "되지 않습니다. 더 큰 스캔/사진을 업로드해 주세요 (가로 "
+                    "2,000px 이상 — 300 DPI 스캔이나 원본 크기 촬영본. 웹 "
+                    "미리보기 캡처는 실패합니다)."
                 )
             else:
                 detail = (
-                    "Could not recognize the score. Recognition needs a clear, "
-                    "flat, straight-on image of a printed score — a full page "
-                    "scan works best. Small partial crops, photos at an angle, "
-                    "and handwritten scores usually fail."
+                    "악보를 인식하지 못했습니다. 인쇄된 악보를 평평하게 정면에서 "
+                    "찍은 선명한 이미지가 필요합니다 — 전체 페이지 스캔이 가장 잘 "
+                    "됩니다. 부분 크롭, 기울어진 사진, 손글씨 악보는 대부분 "
+                    "실패합니다."
                 )
             raise HTTPException(status_code=422, detail=detail)
 
         return xml
 
     except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="OMR timed out (image too complex).")
+        raise HTTPException(status_code=504, detail="OMR 처리 시간이 초과되었습니다 (이미지가 너무 복잡합니다).")
     finally:
         # Delete the uploaded image and every generated file right away.
         shutil.rmtree(tmpdir, ignore_errors=True)

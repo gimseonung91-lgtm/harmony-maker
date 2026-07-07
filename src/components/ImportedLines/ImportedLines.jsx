@@ -29,24 +29,24 @@ export function ImportedLines() {
                 enabled={enabledTracks[line.id] !== false}
                 onToggle={() => toggleTrack(line.id)}
               />
-              <span style={styles.label}>Line {i + 1}</span>
-              <span style={styles.meta}>{line.notes.length} notes · {measureCount} measures</span>
+              <span style={styles.label}>라인 {i + 1}</span>
+              <span style={styles.meta}>음표 {line.notes.length}개 · 마디 {measureCount}개</span>
 
               <div style={styles.actions}>
                 <button
                   onClick={() => editImportedLine(line.id)}
                   style={{ ...btnStyle(false), color: 'var(--accent)' }}
-                  title="Load this line into the melody editor (replaces the current melody; Ctrl+Z restores it)"
-                  aria-label={`Edit line ${i + 1} in the melody editor`}
+                  title="이 라인을 멜로디 편집기로 불러옵니다 (현재 멜로디를 대체, Ctrl+Z로 복원 가능)"
+                  aria-label={`라인 ${i + 1}을 멜로디 편집기에서 편집`}
                 >
-                  ✎ Edit
+                  ✎ 편집
                 </button>
                 <button
                   onClick={() => moveLine(line.id, 'up')}
                   disabled={i === 0}
                   style={btnStyle(i === 0)}
-                  title="Move line up"
-                  aria-label={`Move line ${i + 1} up`}
+                  title="라인을 위로 이동"
+                  aria-label={`라인 ${i + 1}을 위로 이동`}
                 >
                   ↑
                 </button>
@@ -54,8 +54,8 @@ export function ImportedLines() {
                   onClick={() => moveLine(line.id, 'down')}
                   disabled={i === importedLines.length - 1}
                   style={btnStyle(i === importedLines.length - 1)}
-                  title="Move line down"
-                  aria-label={`Move line ${i + 1} down`}
+                  title="라인을 아래로 이동"
+                  aria-label={`라인 ${i + 1}을 아래로 이동`}
                 >
                   ↓
                 </button>
@@ -63,16 +63,16 @@ export function ImportedLines() {
                   onClick={() => splitLine(line.id)}
                   disabled={measureCount <= 1}
                   style={btnStyle(measureCount <= 1)}
-                  title="Split into one line per measure"
-                  aria-label={`Split line ${i + 1} into one line per measure`}
+                  title="마디 단위로 한 줄씩 분할"
+                  aria-label={`라인 ${i + 1}을 마디 단위로 분할`}
                 >
-                  Split
+                  분할
                 </button>
                 <button
                   onClick={() => removeLine(line.id)}
                   style={{ ...btnStyle(false), color: 'var(--danger)' }}
-                  title="Delete this line"
-                  aria-label={`Delete line ${i + 1}`}
+                  title="이 라인을 삭제합니다"
+                  aria-label={`라인 ${i + 1} 삭제`}
                 >
                   ✕
                 </button>

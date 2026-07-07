@@ -69,8 +69,8 @@ describe('parseMusicXML', () => {
   })
 
   it('throws on unparseable XML, missing part, and empty scores', () => {
-    expect(() => parseMusicXML('not xml <<<')).toThrow(/Invalid MusicXML/)
-    expect(() => parseMusicXML('<?xml version="1.0"?><score-partwise/>')).toThrow(/No <part>/)
-    expect(() => parseMusicXML(wrap('<measure number="1"></measure>'))).toThrow(/No notes/)
+    expect(() => parseMusicXML('not xml <<<')).toThrow(/올바르지 않은 MusicXML/)
+    expect(() => parseMusicXML('<?xml version="1.0"?><score-partwise/>')).toThrow(/<part>를 찾을 수 없습니다/)
+    expect(() => parseMusicXML(wrap('<measure number="1"></measure>'))).toThrow(/음표를 찾지 못했습니다/)
   })
 })

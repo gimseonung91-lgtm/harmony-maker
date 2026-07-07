@@ -5,8 +5,8 @@ export function TrackToggle({ enabled, onToggle }) {
   return (
     <button
       onClick={onToggle}
-      title={enabled ? 'Mute this track' : 'Unmute this track'}
-      aria-label={enabled ? 'Mute this track' : 'Unmute this track'}
+      title={enabled ? '이 트랙 음소거' : '이 트랙 음소거 해제'}
+      aria-label={enabled ? '이 트랙 음소거' : '이 트랙 음소거 해제'}
       aria-pressed={enabled}
       style={{
         display: 'flex',

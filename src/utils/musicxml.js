@@ -96,11 +96,11 @@ function parseMeta(part) {
 export function parseMusicXML(xmlText) {
   const doc = new DOMParser().parseFromString(xmlText, 'application/xml')
   if (doc.querySelector('parsererror')) {
-    throw new Error('Invalid MusicXML: could not parse the document.')
+    throw new Error('올바르지 않은 MusicXML: 문서를 해석할 수 없습니다.')
   }
 
   const part = doc.querySelector('part')
-  if (!part) throw new Error('No <part> found in the MusicXML document.')
+  if (!part) throw new Error('MusicXML 문서에서 <part>를 찾을 수 없습니다.')
 
   const measures = Array.from(part.querySelectorAll('measure'))
   const hasSystemBreaks = measures.some((m) => m.querySelector(SYSTEM_BREAK))
@@ -128,7 +128,7 @@ export function parseMusicXML(xmlText) {
   flush()
 
   if (lines.length === 0) {
-    throw new Error('No notes found in the MusicXML document.')
+    throw new Error('MusicXML 문서에서 음표를 찾지 못했습니다.')
   }
 
   return {

@@ -25,7 +25,7 @@ export function NotesPanel() {
 
   return (
     <div>
-      <SectionLabel>Duration</SectionLabel>
+      <SectionLabel>음길이</SectionLabel>
       <div className="toolbar-duration-row">
         {DURATIONS.map((d) => (
           <button
@@ -43,7 +43,7 @@ export function NotesPanel() {
 
       {OCTAVES.map((octave) => (
         <div key={octave}>
-          <SectionLabel>Octave {octave}</SectionLabel>
+          <SectionLabel>옥타브 {octave}</SectionLabel>
           <div className="toolbar-note-grid">
             {NOTE_TILES.filter((t) => t.octave === octave).map((t) => (
               <DraggableNote
@@ -58,7 +58,7 @@ export function NotesPanel() {
         </div>
       ))}
 
-      <SectionLabel>Rests</SectionLabel>
+      <SectionLabel>쉼표</SectionLabel>
       <div className="toolbar-note-grid">
         {RESTS.map((r) => (
           <DraggableNote
@@ -72,8 +72,9 @@ export function NotesPanel() {
       </div>
 
       <p className="toolbar-hint">
-        Tip: click on the staff to add a note at that pitch (using the selected
-        duration), or drag a tile. Use each chip's ✕ to delete a note, ⌒ to tie it.
+        팁: 오선지를 클릭하면 그 음높이에 음표가 추가됩니다(선택한 음길이 사용).
+        타일을 드래그해서 놓아도 되고, 기존 음표 위에 놓으면 그 음표가 교체됩니다.
+        각 칩의 ✕로 삭제, ⌒로 붙임줄을 설정합니다.
       </p>
     </div>
   )

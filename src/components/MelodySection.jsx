@@ -12,7 +12,7 @@ export function MelodySection() {
     <div className="melody-section">
       <div className="line-header">
         <TrackToggle enabled={melodyEnabled} onToggle={() => toggleTrack('melody')} />
-        <p className="section-label">Melody · {keySignature} major</p>
+        <p className="section-label">멜로디 · {keySignature} 장조</p>
       </div>
       <div id="melody_line">
         <DropCanvas />

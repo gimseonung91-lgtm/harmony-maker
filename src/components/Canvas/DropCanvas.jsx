@@ -4,6 +4,13 @@ import { useShallow } from 'zustand/react/shallow'
 import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { useVexFlow } from '../../hooks/useVexFlow'
 import { yToPitch } from '../../utils/pitchUtils'
+import { getDuration } from '../../domain/durations'
+
+// Rest chip caption, e.g. "4분쉼표" (falls back for dotted variants)
+function restCaption(duration) {
+  const meta = getDuration(duration)
+  return meta.restLabel ?? `${meta.label} 쉼표`
+}
 
 const SNAP_COLS = 28
 export const STAFF_TOP_OFFSET = 44
@@ -108,7 +115,7 @@ export function DropCanvas() {
           justifyContent: 'center', pointerEvents: 'none', color: 'var(--text-muted)',
           fontSize: 12, letterSpacing: '0.04em',
         }}>
-          Click the staff or drag from the toolbar — then drag notes to reorder
+          오선지를 클릭하거나 도구함에서 드래그하세요 — 놓인 음표는 드래그로 재배치할 수 있습니다
         </div>
       )}
 
@@ -157,13 +164,13 @@ export function DropCanvas() {
           {melody.map((n) => (
             <div key={n.id} style={chipWrap(n.type === 'rest', selectedNoteId === n.id)}>
               <span style={{ fontSize: 9, fontWeight: 600 }}>
-                {n.type === 'rest' ? `${n.duration} rest` : n.pitch}
+                {n.type === 'rest' ? restCaption(n.duration) : n.pitch}
               </span>
               {n.type !== 'rest' && (
                 <button
                   onClick={() => toggleTie(n.id)}
-                  title="Tie to next note"
-                  aria-label={`Tie ${n.pitch} to the next note`}
+                  title="다음 음표와 붙임줄"
+                  aria-label={`${n.pitch}을(를) 다음 음표와 붙임줄로 연결`}
                   aria-pressed={n.tie}
                   style={{ ...miniBtn, ...(n.tie ? tieActive : {}) }}
                 >
@@ -172,8 +179,8 @@ export function DropCanvas() {
               )}
               <button
                 onClick={() => removeNote(n.id)}
-                title="Delete this note"
-                aria-label={`Delete ${n.type === 'rest' ? `${n.duration} rest` : n.pitch}`}
+                title="이 음표 삭제"
+                aria-label={`${n.type === 'rest' ? restCaption(n.duration) : n.pitch} 삭제`}
                 style={{ ...miniBtn, ...deleteBtn }}
               >
                 ✕
@@ -197,7 +204,7 @@ function NoteHandle({ note, x, selected, onSelect }) {
       {...listeners}
       {...attributes}
       onClick={(e) => { e.stopPropagation(); onSelect(note.id) }}
-      title="Drag to move · click to select"
+      title="드래그로 이동 · 클릭으로 선택"
       style={{
         position: 'absolute', left: x - 9, top: 24, width: 18, height: 92,
         cursor: 'grab', borderRadius: 4, pointerEvents: 'auto',
