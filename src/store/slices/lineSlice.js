@@ -1,4 +1,3 @@
-// Derived harmony lines and imported (OMR / MusicXML) lines.
 import { harmonize } from '../../utils/harmonyLogic'
 import { newId } from '../helpers'
 
@@ -9,7 +8,6 @@ export const createLineSlice = (set) => ({
   // Each line: { id, type: '3rd_harmony'|'5th_harmony', notes: [...] }
   derivedLines: [],
 
-  // Lines imported from a score image / MusicXML (one per system).
   // Each line: { id, notes: [...] } where notes carry a `measure` index.
   importedLines: [],
 
@@ -57,7 +55,6 @@ export const createLineSlice = (set) => ({
       return { derivedLines: s.derivedLines.filter((l) => l.id !== id), enabledTracks }
     }),
 
-  // ── Imported lines (multi-system OMR / MusicXML) ──────────────────
   setImportedLines: (lines) =>
     set((s) => {
       const mapped = lines.map((l) => ({ id: newId('imp'), notes: l.notes }))

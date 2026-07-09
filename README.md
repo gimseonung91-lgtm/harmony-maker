@@ -10,7 +10,6 @@
 - ✏️ **드롭으로 교체** — 기존 음표 위에 타일을 가져다 놓으면 그 음표가 바로 수정됨 (삭제 후 재입력 불필요)
 - 🎶 **화음 자동 생성** — 버튼 한 번으로 3도/5도 다이아토닉 화성을 독립된 오선지 줄로 생성
 - 📄 **MusicXML 임포트** — MuseScore 등에서 내보낸 악보를 시스템(단) 단위로 분리해 불러오기 + 조성/박자 자동 감지
-- 📷 **악보 이미지 인식(OMR)** — 사진/스캔 이미지를 Audiveris 백엔드로 분석해 음표 추출 (페이지당 수십 초)
 - 🎤 **보컬 파트 자동 추출** — 보컬+피아노 악보에서 피아노 반주 보표는 버리고 맨 위 보컬 라인만 가져오기
 - 🖊️ **임포트 라인 편집** — 인식된 보컬 라인을 멜로디 편집기로 불러와 자유롭게 수정
 - 📏 **박자 설정 + 마디선** — 헤더에서 조성/박자를 바로 바꾸면 마디선이 박자에 맞춰 렌더
@@ -25,7 +24,6 @@
 | 영역 | 기술 |
 |---|---|
 | 프론트엔드 | React 18 + Vite 6, Zustand, VexFlow(악보 렌더), Tone.js(오디오), @dnd-kit(드래그앤드롭), jsPDF |
-| 백엔드 (OMR) | Python 3.11, FastAPI, oemer, OpenCV — Hugging Face Spaces(Docker) 배포 |
 | 배포 | GitHub Pages (GitHub Actions 자동 배포) |
 
 ## 로컬 실행
@@ -42,19 +40,9 @@ npm run test:coverage  # 커버리지 리포트
 npm run check:modules  # 모듈 크기 한도 검사 (App≤180, Toolbar≤120, 기타≤250 논리줄)
 npm run build:budget   # 빌드 + eager 번들 예산 검사 (Tone/jsPDF/html2canvas 지연 로딩 강제)
 
-# (선택) 이미지 OMR 백엔드
-cd backend
-pip install -r requirements.txt
-python -m uvicorn app:app --port 7860
 ```
-
-이미지 OMR을 로컬 백엔드로 쓰려면 루트에 `.env.local`을 만들고 다음을 설정합니다:
-
-```
-VITE_OMR_BACKEND_URL=http://localhost:7860
-```
-
-> **참고:** OMR(oemer)은 CPU에서 한 페이지에 수 분이 걸립니다. 빠른 경로는 MusicXML 임포트입니다 — 악보를 MuseScore 등에서 `.musicxml`로 내보내 업로드하세요.
+사진/스캔 악보 인식 기능은 정확도가 낮고 유료 백엔드 비용 부담이 있어 제거했습니다.
+악보를 가져오려면 MuseScore 등에서 `.musicxml`로 내보낸 뒤 업로드하세요.
 
 ## 프로젝트 구조
 
@@ -64,8 +52,7 @@ src/
 ├─ store/useHarmonyStore.js # Zustand 전역 상태 (멜로디/화성/임포트 라인)
 ├─ hooks/useVexFlow.js      # VexFlow 오선지 렌더 훅
 ├─ components/              # 캔버스, 툴바, 라인 카드 UI
-└─ utils/                   # 화성 계산, MusicXML 파서, OMR, 오디오, PDF
-backend/                    # FastAPI + oemer OMR 서버 (HF Spaces용)
+└─ utils/                   # 화성 계산, MusicXML 파서, 오디오, PDF
 ```
 
 자세한 기술 명세와 진행 상황은 [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)를 참고하세요.

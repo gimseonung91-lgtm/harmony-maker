@@ -1,9 +1,3 @@
-// MusicXML → app note-model parser (pure browser JS, no backend).
-//
-// MusicXML is the common output format of oemer, MuseScore, music21 and most
-// notation tools, so importing it bridges the app to all of them: run oemer
-// (or any tool) on a score, then upload the resulting .musicxml here.
-//
 // The parser splits the score into separate lines (staff systems): by the
 // MusicXML system-break markers when present, otherwise every N measures.
 // Each note is tagged with its measure index so a line can later be split into

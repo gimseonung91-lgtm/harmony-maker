@@ -137,7 +137,7 @@ describe('parseMusicXML', () => {
     expect(lines[0].notes.map((n) => n.pitch)).toEqual(['B4'])
   })
 
-  it('prefers the lyrical single-staff part when OMR part names are unhelpful', () => {
+  it('prefers the lyrical single-staff part when part names are unhelpful', () => {
     const xml = `<?xml version="1.0"?>
 <score-partwise>
   <part-list>

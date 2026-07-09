@@ -102,7 +102,6 @@ export const createEditorSlice = (set) => ({
 
   clearMelody: () => set((s) => ({ melody: [], selectedNoteId: null, _undo: pushUndo(s) })),
 
-  // Replace the whole melody at once (used by the image-import / OMR flow)
   setMelody: (notes) =>
     set((s) => ({
       melody: notes.map((n) => ({

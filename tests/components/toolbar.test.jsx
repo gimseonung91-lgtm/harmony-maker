@@ -35,6 +35,7 @@ describe('Toolbar', () => {
     expect(screen.getByText('음길이')).toBeInTheDocument()
     await user.click(screen.getByRole('tab', { name: '가져오기' }))
     expect(screen.getByText(/MusicXML 업로드/)).toBeInTheDocument()
+    expect(screen.queryByText(/악보 이미지 업로드/)).not.toBeInTheDocument()
     await user.click(screen.getByRole('tab', { name: '설정' }))
     expect(screen.getByText('조성')).toBeInTheDocument()
   })
