@@ -8,6 +8,9 @@
 import { parseMusicXML } from './musicxml'
 
 const BACKEND_URL = import.meta.env.VITE_OMR_BACKEND_URL || ''
+const LOW_CONFIDENCE_MIN_LINES = 2
+const LOW_CONFIDENCE_MIN_NOTES = 8
+const RHYTHMIC_EVIDENCE = /<lyric\b|<beam\b|<type>\s*(eighth|16th|32nd|64th)\s*<\/type>|<dot\b|<tie\b|<tied\b/i
 
 export function hasOmrBackend() {
   return Boolean(BACKEND_URL)
@@ -26,6 +29,28 @@ const SAMPLE_LINES = [
     ],
   },
 ]
+
+function countNotes(lines) {
+  return lines.reduce((total, line) => total + line.notes.length, 0)
+}
+
+function hasParsedRhythmicEvidence(lines) {
+  return lines.some((line) => line.notes.some((note) => (
+    note.beam || note.tie || note.duration === '8' || note.duration === '8d'
+    || note.duration === '16' || note.duration === '16d'
+  )))
+}
+
+export function assertUsableOmrResult(lines, xmlText) {
+  const enoughContentToJudge = lines.length >= LOW_CONFIDENCE_MIN_LINES
+    && countNotes(lines) >= LOW_CONFIDENCE_MIN_NOTES
+  const hasMusicXmlEvidence = RHYTHMIC_EVIDENCE.test(xmlText)
+  if (enoughContentToJudge && !hasMusicXmlEvidence && !hasParsedRhythmicEvidence(lines)) {
+    throw new Error(
+      '인식 결과의 신뢰도가 낮아 악보에 넣지 않았습니다. 보컬 오선만 잘라서 다시 업로드하거나, 가능하면 원본 MusicXML을 업로드해 주세요.'
+    )
+  }
+}
 
 /**
  * Analyze a sheet-music image and return its lines (staff systems).
@@ -51,6 +76,7 @@ export async function analyzeScoreImage(file) {
     }
     const xml = await res.text()
     const { lines, meta } = parseMusicXML(xml)
+    assertUsableOmrResult(lines, xml)
     return { lines, meta, usedBackend: true }
   }
 
