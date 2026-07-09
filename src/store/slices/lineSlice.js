@@ -22,7 +22,10 @@ export const createLineSlice = (set) => ({
 
       const notes = s.melody.map((n) => {
         if (n.type === 'rest') {
-          return { id: newId('h'), type: 'rest', pitch: null, duration: n.duration, tie: n.tie }
+          return {
+            id: newId('h'), type: 'rest', pitch: null,
+            duration: n.duration, tie: n.tie, beam: false,
+          }
         }
         const harmonized = harmonize(n.pitch, keySignature, interval)
         return {
@@ -31,6 +34,7 @@ export const createLineSlice = (set) => ({
           pitch: harmonized ?? n.pitch, // fall back to melody pitch if non-diatonic
           duration: n.duration,
           tie: n.tie,
+          beam: n.beam ?? false,
         }
       })
 

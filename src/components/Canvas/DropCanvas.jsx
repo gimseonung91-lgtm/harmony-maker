@@ -5,6 +5,7 @@ import { useHarmonyStore } from '../../store/useHarmonyStore'
 import { useVexFlow } from '../../hooks/useVexFlow'
 import { yToPitch } from '../../utils/pitchUtils'
 import { getDuration } from '../../domain/durations'
+import { isBeamableDuration } from '../../domain/beams'
 
 // Rest chip caption, e.g. "4분쉼표" (falls back for dotted variants)
 function restCaption(duration) {
@@ -26,7 +27,7 @@ export function DropCanvas() {
   const {
     melody, projectInfo, selectedDuration, selectedNoteId,
     notePositions, setNotePositions, addNoteAt, removeNote, toggleTie,
-    selectNote, setLyric,
+    toggleBeam, selectNote, setLyric,
   } = useHarmonyStore(useShallow((s) => ({
     melody: s.melody,
     projectInfo: s.projectInfo,
@@ -37,6 +38,7 @@ export function DropCanvas() {
     addNoteAt: s.addNoteAt,
     removeNote: s.removeNote,
     toggleTie: s.toggleTie,
+    toggleBeam: s.toggleBeam,
     selectNote: s.selectNote,
     setLyric: s.setLyric,
   })))
@@ -152,7 +154,6 @@ export function DropCanvas() {
         ) : null
       )}
 
-      {/* Placed-note chips: explicit ✕ delete + tie toggle */}
       {melody.length > 0 && (
         <div
           onClick={(e) => e.stopPropagation()}
@@ -167,15 +168,28 @@ export function DropCanvas() {
                 {n.type === 'rest' ? restCaption(n.duration) : n.pitch}
               </span>
               {n.type !== 'rest' && (
-                <button
-                  onClick={() => toggleTie(n.id)}
-                  title="다음 음표와 붙임줄"
-                  aria-label={`${n.pitch}을(를) 다음 음표와 붙임줄로 연결`}
-                  aria-pressed={n.tie}
-                  style={{ ...miniBtn, ...(n.tie ? tieActive : {}) }}
-                >
-                  ⌒
-                </button>
+                <>
+                  <button
+                    onClick={() => toggleTie(n.id)}
+                    title="다음 음표와 붙임줄"
+                    aria-label={`${n.pitch}을(를) 다음 음표와 붙임줄로 연결`}
+                    aria-pressed={n.tie}
+                    style={{ ...miniBtn, ...(n.tie ? activeBtn : {}) }}
+                  >
+                    ⌒
+                  </button>
+                  {isBeamableDuration(n.duration) && (
+                    <button
+                      onClick={() => toggleBeam(n.id)}
+                      title="다음 짧은 음표와 빔 연결"
+                      aria-label={`${n.pitch}을(를) 다음 짧은 음표와 빔으로 연결`}
+                      aria-pressed={n.beam ?? false}
+                      style={{ ...beamBtn, ...(n.beam ? activeBtn : {}) }}
+                    >
+                      빔
+                    </button>
+                  )}
+                </>
               )}
               <button
                 onClick={() => removeNote(n.id)}
@@ -244,5 +258,12 @@ const miniBtn = {
   lineHeight: 1,
 }
 
-const tieActive = { background: 'var(--accent)', color: '#fff' }
+const beamBtn = {
+  ...miniBtn,
+  width: 22,
+  fontSize: 10,
+  fontWeight: 700,
+}
+
+const activeBtn = { background: 'var(--accent)', color: '#fff' }
 const deleteBtn = { background: 'rgba(242,92,84,0.15)', color: 'var(--danger)' }

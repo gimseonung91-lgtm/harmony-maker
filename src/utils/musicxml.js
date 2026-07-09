@@ -37,6 +37,15 @@ function alterToAccidental(alter) {
   return ''
 }
 
+function beamConnectsToNext(noteEl) {
+  const beamText = Array.from(noteEl.querySelectorAll('beam'))
+    .find((beamEl) => (beamEl.getAttribute('number') ?? '1') === '1')
+    ?.textContent
+    ?.trim()
+    ?.toLowerCase()
+  return beamText === 'begin' || beamText === 'continue'
+}
+
 // Parse the notes of a single <measure>, tagging each with the measure index.
 // Only the top staff and the first voice are kept: piano-vocal scores put the
 // vocal line on staff 1 and the piano grand staff on staves 2-3, and a second
@@ -61,7 +70,7 @@ function parseMeasureNotes(measure, measureIdx, voiceState) {
     )
 
     if (noteEl.querySelector('rest')) {
-      notes.push({ type: 'rest', pitch: null, duration, tie: false, measure: measureIdx })
+      notes.push({ type: 'rest', pitch: null, duration, tie: false, beam: false, measure: measureIdx })
       return
     }
 
@@ -74,8 +83,9 @@ function parseMeasureNotes(measure, measureIdx, voiceState) {
 
     const pitch = `${step}${alterToAccidental(pitchEl.querySelector('alter')?.textContent)}${octave}`
     const tie = !!noteEl.querySelector('tie[type="start"], tied[type="start"]')
+    const beam = beamConnectsToNext(noteEl)
 
-    notes.push({ type: 'note', pitch, duration, tie, measure: measureIdx })
+    notes.push({ type: 'note', pitch, duration, tie, beam, measure: measureIdx })
   })
   return notes
 }

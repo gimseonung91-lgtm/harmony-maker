@@ -1,8 +1,9 @@
 // The editable melody line: notes, selection, layout positions, and undo.
 import { newId, pushUndo } from '../helpers'
+import { isBeamableDuration } from '../../domain/beams'
 
 export const createEditorSlice = (set) => ({
-  // Each element: { id, type: 'note'|'rest', pitch, duration, tie, lyric }
+  // Each element: { id, type: 'note'|'rest', pitch, duration, tie, beam, lyric }
   melody: [],
   // Note X centers reported by VexFlow layout (for drag-reordering & lyrics)
   notePositions: [],
@@ -23,6 +24,7 @@ export const createEditorSlice = (set) => ({
         pitch: noteData.pitch ?? null,
         duration: noteData.duration ?? 'q',
         tie: false,
+        beam: false,
         lyric: '',
       }
       const at = index == null ? s.melody.length : Math.max(0, Math.min(index, s.melody.length))
@@ -64,7 +66,9 @@ export const createEditorSlice = (set) => ({
 
   setNoteDuration: (id, duration) =>
     set((s) => ({
-      melody: s.melody.map((n) => (n.id === id ? { ...n, duration } : n)),
+      melody: s.melody.map((n) => (
+        n.id === id ? { ...n, duration, beam: isBeamableDuration(duration) ? n.beam : false } : n
+      )),
       _undo: pushUndo(s),
     })),
 
@@ -86,6 +90,16 @@ export const createEditorSlice = (set) => ({
       _undo: pushUndo(s),
     })),
 
+  toggleBeam: (id) =>
+    set((s) => ({
+      melody: s.melody.map((n) => (
+        n.id === id && n.type !== 'rest' && isBeamableDuration(n.duration)
+          ? { ...n, beam: !n.beam }
+          : n
+      )),
+      _undo: pushUndo(s),
+    })),
+
   clearMelody: () => set((s) => ({ melody: [], selectedNoteId: null, _undo: pushUndo(s) })),
 
   // Replace the whole melody at once (used by the image-import / OMR flow)
@@ -97,6 +111,7 @@ export const createEditorSlice = (set) => ({
         pitch: n.pitch ?? null,
         duration: n.duration ?? 'q',
         tie: n.tie ?? false,
+        beam: n.beam ?? false,
         lyric: n.lyric ?? '',
       })),
       _undo: pushUndo(s),
@@ -126,6 +141,7 @@ export const createEditorSlice = (set) => ({
           pitch: n.pitch ?? null,
           duration: n.duration ?? 'q',
           tie: n.tie ?? false,
+          beam: n.beam ?? false,
           lyric: n.lyric ?? '',
         })),
         selectedNoteId: null,

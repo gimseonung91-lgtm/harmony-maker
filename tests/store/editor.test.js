@@ -61,14 +61,19 @@ describe('melody editing', () => {
     expect(g().melody).toHaveLength(1)
   })
 
-  it('setNoteDuration, toggleTie, removeNote target one note by id', () => {
+  it('setNoteDuration, toggleTie, toggleBeam, removeNote target one note by id', () => {
     g().addNoteAt({ type: 'note', pitch: 'C4', duration: 'q' })
     g().addNoteAt({ type: 'note', pitch: 'D4', duration: 'q' })
     const [a, b] = g().melody
-    g().setNoteDuration(a.id, 'h')
     g().toggleTie(a.id)
-    expect(g().melody[0]).toMatchObject({ duration: 'h', tie: true })
-    expect(g().melody[1]).toMatchObject({ duration: 'q', tie: false })
+    g().toggleBeam(a.id)
+    expect(g().melody[0]).toMatchObject({ duration: 'q', tie: true, beam: false })
+    g().setNoteDuration(a.id, '8')
+    g().toggleBeam(a.id)
+    expect(g().melody[0]).toMatchObject({ duration: '8', tie: true, beam: true })
+    g().setNoteDuration(a.id, 'h')
+    expect(g().melody[0]).toMatchObject({ duration: 'h', tie: true, beam: false })
+    expect(g().melody[1]).toMatchObject({ duration: 'q', tie: false, beam: false })
     g().selectNote(b.id)
     g().removeNote(b.id)
     expect(g().melody).toHaveLength(1)

@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { pitchToVex } from '../utils/pitchUtils'
 import { getDuration } from '../domain/durations'
+import { collectBeamNoteGroups } from '../domain/beams'
 
 /**
  * Renders a single monophonic line (melody or harmony) onto a VexFlow canvas.
- * Supports notes, rests, automatic beaming of eighth/sixteenth notes, and ties.
+ * Supports notes, rests, explicit beaming of eighth/sixteenth notes, and ties.
  *
- * @param {object[]} notes        – array of note objects { type, pitch, duration, tie, lyric }
+ * @param {object[]} notes        – array of note objects { type, pitch, duration, tie, beam, lyric }
  * @param {object}   projectInfo  – { clef, keySignature, timeSignature }
  * @param {function} [onLayout]   – called with [{ id, x }] after layout (note X centers)
  * @returns {{ containerRef }}
@@ -100,8 +101,8 @@ export function useVexFlow(notes, projectInfo, onLayout) {
       const voice = new Voice({ num_beats: 4, beat_value: 4 }).setMode(2) // SOFT
       voice.addTickables(tickables)
 
-      // Auto-beam consecutive eighth/sixteenth notes (skips rests automatically)
-      const beams = Beam.generateBeams(vexNotes)
+      // Beam only explicitly connected eighth/sixteenth-note groups.
+      const beams = collectBeamNoteGroups(notes, vexNotes).map((group) => new Beam(group))
 
       // Build ties: a note with tie=true connects to the next sounding note
       const ties = []
