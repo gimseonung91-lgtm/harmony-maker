@@ -137,6 +137,48 @@ describe('parseMusicXML', () => {
     expect(lines[0].notes.map((n) => n.pitch)).toEqual(['B4'])
   })
 
+  it('prefers the lyrical single-staff part when OMR part names are unhelpful', () => {
+    const xml = `<?xml version="1.0"?>
+<score-partwise>
+  <part-list>
+    <score-part id="P1"><part-name>Part 1</part-name></score-part>
+    <score-part id="P2"><part-name>Part 2</part-name></score-part>
+  </part-list>
+  <part id="P1"><measure number="1">
+    <attributes><staves>1</staves></attributes>
+    ${NOTE('C', 3, 'eighth')}${NOTE('E', 3, 'eighth')}${NOTE('G', 3, 'eighth')}
+  </measure></part>
+  <part id="P2"><measure number="1">
+    <attributes><staves>1</staves></attributes>
+    <note><rest/><type>half</type></note>
+    <note><pitch><step>A</step><octave>4</octave></pitch><type>quarter</type><lyric><text>꿈</text></lyric></note>
+  </measure></part>
+</score-partwise>`
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.pitch).filter(Boolean)).toEqual(['A4'])
+  })
+
+  it('prefers a sparse melody-like part over dense accompaniment when names and lyrics are missing', () => {
+    const xml = `<?xml version="1.0"?>
+<score-partwise>
+  <part-list>
+    <score-part id="P1"><part-name>Part 1</part-name></score-part>
+    <score-part id="P2"><part-name>Part 2</part-name></score-part>
+  </part-list>
+  <part id="P1"><measure number="1">
+    <attributes><staves>1</staves></attributes>
+    ${NOTE('C', 3, 'eighth')}${NOTE('E', 3, 'eighth')}${NOTE('G', 3, 'eighth')}${NOTE('C', 4, 'eighth')}
+  </measure></part>
+  <part id="P2"><measure number="1">
+    <attributes><staves>1</staves></attributes>
+    <note><rest/><type>half</type></note>
+    ${NOTE('B', 4, 'quarter')}
+  </measure></part>
+</score-partwise>`
+    const { lines } = parseMusicXML(xml)
+    expect(lines[0].notes.map((n) => n.pitch).filter(Boolean)).toEqual(['B4'])
+  })
+
   it('throws on unparseable XML, missing part, and empty scores', () => {
     expect(() => parseMusicXML('not xml <<<')).toThrow(/올바르지 않은 MusicXML/)
     expect(() => parseMusicXML('<?xml version="1.0"?><score-partwise/>')).toThrow(/<part>를 찾을 수 없습니다/)

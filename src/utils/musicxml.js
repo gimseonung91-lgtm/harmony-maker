@@ -95,11 +95,53 @@ const SYSTEM_BREAK = 'print[new-system="yes"], print[new-page="yes"]'
 // Part names that clearly identify the vocal line
 const VOCAL_NAME = /voc|voice|sing|lead|melod|보컬|노래|멜로디|목소리/i
 
-// Choose the part that carries the vocal line. Piano-vocal scores keep the
-// voice on top and the piano below (as a 2-staff part), so:
-// 1. a part whose name says it is vocal wins,
-// 2. otherwise the first single-staff part (piano declares <staves>2</staves>),
-// 3. otherwise the first part.
+const STEP_TO_SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
+
+function partStaffCount(part) {
+  return parseInt(part.querySelector('attributes > staves')?.textContent ?? '1', 10)
+}
+
+function pitchHeight(noteEl) {
+  const pitchEl = noteEl.querySelector('pitch')
+  const step = pitchEl?.querySelector('step')?.textContent?.trim()
+  const octave = parseInt(pitchEl?.querySelector('octave')?.textContent ?? '', 10)
+  if (!step || !Number.isFinite(octave)) return null
+  return octave * 12 + (STEP_TO_SEMITONE[step] ?? 0)
+}
+
+function partProfile(part) {
+  const noteEls = Array.from(part.querySelectorAll('note'))
+    .filter((noteEl) => !noteEl.querySelector('chord'))
+  const pitchedHeights = noteEls
+    .map((noteEl) => pitchHeight(noteEl))
+    .filter((height) => height != null)
+  const measureCount = Math.max(1, part.querySelectorAll('measure').length)
+  const restCount = noteEls.filter((noteEl) => noteEl.querySelector('rest')).length
+  const lyricCount = noteEls.filter((noteEl) => noteEl.querySelector('lyric text')).length
+  const averagePitch = pitchedHeights.length
+    ? pitchedHeights.reduce((sum, height) => sum + height, 0) / pitchedHeights.length
+    : 0
+
+  return {
+    singleStaff: partStaffCount(part) <= 1,
+    lyricCount,
+    restRatio: noteEls.length ? restCount / noteEls.length : 0,
+    pitchedDensity: pitchedHeights.length / measureCount,
+    averagePitch,
+  }
+}
+
+function vocalCandidateScore(part) {
+  const profile = partProfile(part)
+  return (
+    (profile.singleStaff ? 100 : 0)
+    + profile.lyricCount * 80
+    + profile.restRatio * 20
+    + profile.averagePitch / 12
+    - Math.max(0, profile.pitchedDensity - 2) * 8
+  )
+}
+
 function pickVocalPart(doc) {
   const parts = Array.from(doc.querySelectorAll('part'))
   if (parts.length <= 1) return parts[0] ?? null
@@ -110,11 +152,10 @@ function pickVocalPart(doc) {
   const named = parts.find((p) => namedVocalIds.includes(p.getAttribute('id')))
   if (named) return named
 
-  const singleStaff = parts.find((p) => {
-    const staves = parseInt(p.querySelector('attributes > staves')?.textContent ?? '1', 10)
-    return staves <= 1
-  })
-  return singleStaff ?? parts[0]
+  return parts
+    .map((part, order) => ({ part, order, score: vocalCandidateScore(part) }))
+    .sort((a, b) => b.score - a.score || a.order - b.order)[0]
+    ?.part ?? parts[0]
 }
 
 // MusicXML <fifths> (circle of fifths position) → key-signature name
